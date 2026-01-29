@@ -1,0 +1,23 @@
+Package: qualifyr
+Type: Package
+Title: Check Constraints on Relational Data Structures
+Version: 0.1.0-alpha
+Authors@R: c(
+    person(
+      "Ian", "Farm",
+      email = "ian.farm@maine.edu",
+      role = c("aut", "cre")
+    )
+  )
+Description: Lorem ipsum dolor sit amet
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
+Imports: 
+    purrr,
+    rlang
+Suggests: 
+    nycflights13,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
