@@ -6,23 +6,38 @@ new_qf_constraint <- function(cols, subclass, ...) {
 
   structure(cols, class = c(subclass, "qf_constraint"), ...)
 }
-#
-# qf_constraint <- function(cols, subclass, ...) {
-#   cols_quo <- rlang::enquo(cols)
-#
-#   new_qf_constraint(cols, subclass, ...)
-# }
 
+#' @rdname type-predicates
+#' @export
 is_qf_constraint <- function(x) {
   inherits(x, "qf_constraint")
 }
 
+#' Get or set constraints of a qualifyr data frame
+#'
+#' @param x A qualifyr data set or data frame to set constraints on
+#' @param table If `x` is a data set, the name of the table to set constraints
+#'   on, either as a character string or bare symbol
+#' @param dataset If `x` is a data frame, the data set used to reference
+#'   foreign keys against. Only needed if `value` contains a foreign key.
+#' @param ... Additional arguments passed to methods
+#' @param value A list of constraints (or constraint builder functions)
+#'   created with `cstr_*()` functions.
+#'
+#' @returns For `constraints`, the list of `<qf_constraint>` objects associated
+#'   with the table. For `constraints<-`, an updated version of `x` with
+#'   constraints set.
+#'
+#' @export
 constraints <- function(x, ...) {
   UseMethod("constraints")
 }
+#' @rdname constraints
+#' @export
 `constraints<-` <- function(x, ..., value) {
   UseMethod("constraints<-")
 }
+
 check_constraint <- function(constraint, dataframe, dataset) {
   UseMethod("check_constraint")
 }

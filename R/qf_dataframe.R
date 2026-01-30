@@ -18,24 +18,40 @@ as_qf_dataframe <- function(x) {
   new_qf_dataframe(x, list())
 }
 
+#' @rdname type-predicates
+#' @export
 is_qf_dataframe <- function(x) {
   inherits(x, "qf_dataframe")
 }
 
-#' @noRd
+#' @rdname constraints
 #' @exportS3Method constraints qf_dataframe
 constraints.qf_dataframe <- function(x, ...) {
   attr(x, "constraints")
 }
-#' @noRd
+#' @rdname constraints
 #' @exportS3Method "constraints<-" qf_dataframe
-`constraints<-.qf_dataframe` <- function(x, ..., value) {
-  attr(x, "constraints") <- value
+`constraints<-.qf_dataframe` <- function(x, dataset = NULL, ..., value) {
+  if (!rlang::is_list(value)) stop("'value' must be a list")
+  if (!is.null(dataset)) if (!is_qf_dataset(dataset)) stop("'dataset' must be
+    NULL or a <qf_dataset> object")
+
+  constraints_objects <- value |> purrr::modify(\(cstr) {
+    if (is_qf_constraint(cstr)) {
+      cstr
+    } else if (rlang::is_function(cstr) && inherits(cstr, "cstr_builder")) {
+      cstr(dataset, x)
+    } else stop("Elements of 'value' must be either constraint objects or
+      constraint builders returned by cstr_* functions")
+  })
+
+  attr(x, "constraints") <- constraints_objects
   x
 }
-#' @noRd
+
+#' @rdname check_constraints
 #' @exportS3Method check_constraints qf_dataframe
-check_constraints.qf_dataframe <- function(x, dataset, ...) {
+check_constraints.qf_dataframe <- function(x, dataset = NULL, ...) {
   constraints(x) |> purrr::map(check_constraint, x, dataset)
 }
 

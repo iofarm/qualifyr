@@ -1,4 +1,4 @@
-test_that("constraint checking works", {
+test_that("constraint checking works", { expect_no_error({
 
   dset <- qf_dataset(
     flights = nycflights13::flights,
@@ -13,6 +13,6 @@ test_that("constraint checking works", {
     cstr_foreign_key(tailnum, tailnum %from% planes)
   )
 
-  check_constraints(dset)
+  result <- check_constraints(dset)
 
-})
+}) })

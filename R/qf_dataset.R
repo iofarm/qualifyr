@@ -6,6 +6,16 @@ new_qf_dataset <- function(x) {
   structure(x, class = "qf_dataset")
 }
 
+#' Create a new qualifyr data set from data frames
+#'
+#' @param ... Data frames to be included in the data set. If names are provided,
+#'   they will be used as the table names; otherwise, the deparsed expressions
+#'   will be used, which may or may not be a sensible default.
+#'
+#' @returns A new <qf_dataset> object containing the tables provided in `...`
+#'   (after being converted to <qf_dataframe> objects by `as_qf_dataframe()`).
+#'
+#' @export
 qf_dataset <- function(...) {
   dataframe_exprs <- rlang::enexprs(...) |> purrr::map_chr(deparse)
   dataframe_list <- list(...) |> purrr::modify(as_qf_dataframe)
@@ -16,39 +26,53 @@ qf_dataset <- function(...) {
   new_qf_dataset(dataframe_list)
 }
 
+#' @name type-predicates
+#' @rdname type-predicates
+#'
+#' @title Test for qualifyr objects
+#'
+#' @param x The object to test the type of
+#'
+#' @returns `TRUE` if `x` inherits from the specified class; `FALSE` otherwise.
+#' @export
 is_qf_dataset <- function(x) {
   inherits(x, "qf_dataset")
 }
 
 
-#' @noRd
+#' @rdname constraints
 #' @exportS3Method constraints qf_dataset
 constraints.qf_dataset <- function(x, table, ...) {
   table_chr <- rlang::as_string(rlang::ensym(table))
   constraints(x[[table_chr]])
 }
 
-#' @noRd
+#' @rdname constraints
 #' @exportS3Method "constraints<-" qf_dataset
 `constraints<-.qf_dataset` <- function(x, table, ..., value) {
   table_chr <- rlang::as_string(rlang::ensym(table))
-  if (!rlang::is_list(value)) stop("'value' must be a list")
-  constraints(x[[table_chr]]) <- value |> purrr::modify(\(cstr) {
-    if (is_qf_constraint(cstr)) {
-      cstr
-    } else if (rlang::is_function(cstr) && inherits(cstr, "cstr_builder")) {
-      cstr(x, x[[table_chr]])
-    } else stop("Elements of 'value' must be either constraint objects or
-      constraint builders returned by cstr_* functions")
-  })
+  constraints(x[[table_chr]], dataset = x) <- value
   x
 }
 
+#' @rdname check_constraints
+#'
+#' @title Check constraints on qualifyr data set or data frame
+#'
+#' @description
+#' Checks that a data set or data frame satisfies the constraints set on it.
+#'
+#' @param x A `<qf_dataset>` or `<qf_dataframe>` object
+#' @param dataset If `x` is a data frame with foreign key constraints, the
+#'   data set to reference foreign keys against. Can be `NULL` if `x` has no
+#'   foreign keys.
+#' @param ... Further arguments passed to methods
+#'
 check_constraints <- function(x, ...) {
   UseMethod("check_constraints")
 }
 
-#' @noRd
+#' @rdname check_constraints
 #' @exportS3Method check_constraints qf_dataset
 check_constraints.qf_dataset <- function(x, ...) {
   x |> purrr::map(check_constraints, x)
