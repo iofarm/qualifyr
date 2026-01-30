@@ -33,8 +33,9 @@ created with \verb{cstr_*()} functions.}
 \item{dataset}{If \code{x} is a data frame, the data set used to reference
 foreign keys against. Only needed if \code{value} contains a foreign key.}
 
-\item{table}{If \code{x} is a data set, the name of the table to set constraints
-on, either as a character string or bare symbol}
+\item{table}{<\code{\link[=constraints]{tidy-select}}> If \code{x} is a
+data set, the table(s) to set constraints on, either as a character string
+or bare symbol}
 }
 \value{
 For \code{constraints}, the list of \verb{<qf_constraint>} objects associated

@@ -16,8 +16,9 @@ is_qf_constraint <- function(x) {
 #' Get or set constraints of a qualifyr data frame
 #'
 #' @param x A qualifyr data set or data frame to set constraints on
-#' @param table If `x` is a data set, the name of the table to set constraints
-#'   on, either as a character string or bare symbol
+#' @param table <[`tidy-select`][constraints]> If `x` is a
+#'   data set, the table(s) to set constraints on, either as a character string
+#'   or bare symbol
 #' @param dataset If `x` is a data frame, the data set used to reference
 #'   foreign keys against. Only needed if `value` contains a foreign key.
 #' @param ... Additional arguments passed to methods
@@ -42,6 +43,27 @@ check_constraint <- function(constraint, dataframe, dataset) {
   UseMethod("check_constraint")
 }
 
+#' @name cstr_
+#' @rdname cstr_
+#'
+#' @title Constraints for relational data structures
+#'
+#' @description Functions to specify constraints for qualifyr data frames. The
+#'   return values should be stored in a list and passed to `constraints<-`.
+#'
+#' @param cols The columns to set constraints on
+#' @param ref_cols For `cstr_foreign_key()`, the reference columns for the
+#'   foreign key. Specify columns from a different table using `%from%`, e.g.,
+#'   `reference_column %from% reference_table`
+#'
+#' @returns These functions return closures of class `<cstr_builder>`, which
+#'   take a qualifyr data set and data frame as arguments and return an object
+#'   inheriting from `<qf_constraint>`. This implementation detail allows these
+#'   functions to be used with the replacement-form function `constraints<-`.
+NULL
+
+#' @rdname cstr_
+#' @export
 cstr_unique_key <- function(cols) {
   cols_quo <- rlang::enquo(cols)
   structure(function(set, frame) {
@@ -51,6 +73,8 @@ cstr_unique_key <- function(cols) {
   }, class = "cstr_builder")
 }
 
+#' @rdname cstr_
+#' @export
 cstr_primary_key <- function(cols) {
   cols_quo <- rlang::enquo(cols)
   structure(function(set, frame) {
@@ -60,17 +84,12 @@ cstr_primary_key <- function(cols) {
   }, class = "cstr_builder")
 }
 
+#' @rdname cstr_
+#' @export
 cstr_foreign_key <- function(cols, ref_cols) {
   cols_quo <- rlang::enquo(cols)
   ref_cols_quo <- rlang::enquo(ref_cols)
   ref_cols_expr <- rlang::quo_get_expr(ref_cols_quo)
-  ref_table_quo <- NULL
-  if (is.call(ref_cols_expr) && ref_cols_expr[[1]] == "%from%") {
-    ref_cols_quo <- rlang::new_quosure(ref_cols_expr[[2]],
-      rlang::quo_get_env(ref_cols_quo))
-    ref_table_quo <- rlang::new_quosure(ref_cols_expr[[3]],
-      rlang::quo_get_env(ref_cols_quo))
-  }
 
   structure(function(set, frame) {
     cols_chr <- select_names(cols_quo, frame)
@@ -141,6 +160,4 @@ check_constraint.cstr_foreign_key <- function(constraint, dataframe, dataset) {
     from another table")
 }
 
-select_names <- function(expr, data, ...) {
-  names(tidyselect::eval_select(expr, data, allow_rename = FALSE, ...))
 }
