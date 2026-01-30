@@ -155,9 +155,37 @@ check_constraint.cstr_foreign_key <- function(constraint, dataframe, dataset) {
   result
 }
 
-`%from%` <- function(cols, table) {
-  stop("%from% can only be used within a cstr_*() function to specify columns
-    from another table")
-}
-
+#' Specify a reference to columns from another table
+#'
+#' The `%from%` infix operator identifies columns from a specific table within
+#' a qualifyr data set.
+#'
+#' @param cols <`tidy-select`> Reference columns
+#' @param table <`tidy-select`> Reference table
+#' @param .context A `<qf_dataset`> object. Should not be supplied when `%from%`
+#'   is used within a `cstr_*` function argument.
+#'
+#' @returns A character vector of column names, with the `table` attribute set.
+#'
+#' @name from
+#' @export
+`%from%` <- function(cols, table, .context = NULL) {
+  cols_quo <- rlang::enquo(table)
+  table_quo <- rlang::enquo(table)
+  table_obj <- NULL
+  table_name <- NULL
+  if (is.null(.context)) {
+    table_obj <- rlang::eval_tidy(table_quo)
+    stopifnot(rlang::is_vector(table_obj))
+  } else {
+    stopifnot(rlang::is_vector(.context))
+    table_name <- select_names(table_quo, as.list(.context))
+    if (length(table_name) != 1) stop("'table' must refer to exactly 1 table,
+      not ", length(table_name))
+    table_obj <- .context[[table_name]]
+  }
+  cols_names <- select_names(cols_quo, table_obj)
+  result <- cols_names
+  attr(result, "table") <- table_name
+  result
 }

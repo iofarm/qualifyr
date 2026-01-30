@@ -50,8 +50,10 @@ constraints.qf_dataset <- function(x, table, ...) {
 #' @rdname constraints
 #' @exportS3Method "constraints<-" qf_dataset
 `constraints<-.qf_dataset` <- function(x, table, ..., value) {
-  table_chr <- rlang::as_string(rlang::ensym(table))
-  constraints(x[[table_chr]], dataset = x) <- value
+  table_chrs <- select_names(rlang::enquo(table), as.list(x))
+  purrr::walk(table_chrs, \(table_chr) {
+    constraints(x[[table_chr]], dataset = x) <<- value
+  })
   x
 }
 
