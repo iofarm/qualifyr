@@ -43,6 +43,20 @@ check_constraint <- function(constraint, dataframe, dataset) {
   UseMethod("check_constraint")
 }
 
+new_constraint_specifier <- function(code) {
+  structure(
+    rlang::new_function(
+      alist(.dataset = , .table = ),
+      body = rlang::enexpr(code),
+      env = rlang::caller_env()
+    ),
+    class = "qf_constraint_specifier"
+  )
+}
+
+# declare data pronouns to avoid R CMD CHECK notes
+utils::globalVariables(c(".dataset", ".table"))
+
 #' @name cstr_
 #' @rdname cstr_
 #'
@@ -51,66 +65,71 @@ check_constraint <- function(constraint, dataframe, dataset) {
 #' @description Functions to specify constraints for qualifyr data frames. The
 #'   return values should be stored in a list and passed to `constraints<-`.
 #'
-#' @param cols The columns to set constraints on
-#' @param ref_cols For `cstr_foreign_key()`, the reference columns for the
-#'   foreign key. Specify columns from a different table using `%from%`, e.g.,
-#'   `reference_column %from% reference_table`
+#' @param cols <`tidy-select`> The columns to set constraints on
+#' @param reference <`tidy-select`> For `cstr_foreign_key()`, the table and columns to
+#'   reference. If the key columns and reference columns have the same names,
+#'   you can specify just the table. Otherwise, specify the columns using
+#'   `table[columns]` where `columns` is a tidy-select specification.
 #'
-#' @returns These functions return closures of class `<cstr_builder>`, which
-#'   take a qualifyr data set and data frame as arguments and return an object
-#'   inheriting from `<qf_constraint>`. This implementation detail allows these
-#'   functions to be used with the replacement-form function `constraints<-`.
+#' @returns These functions return closures of class
+#'   `<qf_constraint_specifier>`, which take a qualifyr data set and data frame
+#'   as arguments and return an object inheriting from `<qf_constraint>`. This
+#'   unfortunate implementation detail allows omitting the data set and table
+#'   when used in the RHS of the replace-form function `constraints<-`.
 NULL
 
 #' @rdname cstr_
 #' @export
 cstr_unique_key <- function(cols) {
   cols_quo <- rlang::enquo(cols)
-  structure(function(set, frame) {
-    cols_chr <-
-      names(tidyselect::eval_select(cols_quo, frame, allow_rename = FALSE))
+  new_constraint_specifier({
+    cols_chr <- select_names(cols_quo, .table)
     new_qf_constraint(cols_chr, "cstr_unique_key")
-  }, class = "cstr_builder")
+  })
 }
 
 #' @rdname cstr_
 #' @export
 cstr_primary_key <- function(cols) {
   cols_quo <- rlang::enquo(cols)
-  structure(function(set, frame) {
-    cols_chr <-
-      names(tidyselect::eval_select(cols_quo, frame, allow_rename = FALSE))
+  new_constraint_specifier({
+    cols_chr <- select_names(cols_quo, .table)
     new_qf_constraint(cols_chr, c("cstr_primary_key", "cstr_unique_key"))
-  }, class = "cstr_builder")
+  })
 }
 
 #' @rdname cstr_
 #' @export
-cstr_foreign_key <- function(cols, ref_cols) {
+cstr_foreign_key <- function(cols, reference) {
   cols_quo <- rlang::enquo(cols)
-  ref_cols_quo <- rlang::enquo(ref_cols)
-  ref_cols_expr <- rlang::quo_get_expr(ref_cols_quo)
+  ref_quo  <- rlang::enquo(reference)
+  ref_exprs <- parse_reference_specifier(rlang::quo_squash(ref_quo))
+  ref_env <- rlang::quo_get_env(ref_quo)
+  ref_cols_quo <-
+    if (is.null(ref_exprs$cols)) cols_quo
+    else rlang::new_quosure(ref_exprs$cols, ref_env)
+  ref_table_quo <- rlang::new_quosure(ref_exprs$table, ref_env)
 
-  structure(function(set, frame) {
-    cols_chr <- select_names(cols_quo, frame)
-    ref_table_chr <- if (is.null(ref_table_quo)) NULL
-      else select_names(ref_table_quo, as.list(set))
-    ref_cols_chr <- select_names(ref_cols_quo,
-      if (is.null(ref_table_chr)) frame else set[[ref_table_chr]]
-    )
-
-    stopifnot(length(cols_chr) == length(ref_cols_chr))
-    stopifnot(purrr::some(constraints(set[[ref_table_chr]]), \(cstr)
-      inherits(cstr, "cstr_unique_key") && setequal(cstr, ref_cols_chr)
-    ))
+  new_constraint_specifier({
+    cols_chr <- select_names(cols_quo, .table)
+    ref_table_chr <- select_names(ref_table_quo, as.list(.dataset))
+    if (length(ref_table_chr) != 1) stop("A foreign key must have a single
+      reference table, but ", length(ref_table_chr), " were selected")
+    ref_table_obj <- .dataset[[ref_table_chr]]
+    ref_cols_chr <- select_names(ref_cols_quo, ref_table_obj)
+    ref_is_unique_key <- constraints(ref_table_obj) |>
+      purrr::some(\(constraint)
+        inherits(constraint, "cstr_unique_key") &&
+        setequal(constraint, ref_cols_chr)
+      )
+    if (!ref_is_unique_key) stop("Reference columns must be a unique key")
 
     new_qf_constraint(
       cols_chr,
-      ref_cols = ref_cols_chr,
-      ref_table = ref_table_chr,
+      ref_table = ref_table_chr, ref_cols = ref_cols_chr,
       subclass = "cstr_foreign_key"
     )
-  }, class = "cstr_builder")
+  })
 }
 
 #' @noRd
@@ -155,37 +174,19 @@ check_constraint.cstr_foreign_key <- function(constraint, dataframe, dataset) {
   result
 }
 
-#' Specify a reference to columns from another table
-#'
-#' The `%from%` infix operator identifies columns from a specific table within
-#' a qualifyr data set.
-#'
-#' @param cols <`tidy-select`> Reference columns
-#' @param table <`tidy-select`> Reference table
-#' @param .context A `<qf_dataset`> object. Should not be supplied when `%from%`
-#'   is used within a `cstr_*` function argument.
-#'
-#' @returns A character vector of column names, with the `table` attribute set.
-#'
-#' @name from
-#' @export
-`%from%` <- function(cols, table, .context = NULL) {
-  cols_quo <- rlang::enquo(table)
-  table_quo <- rlang::enquo(table)
-  table_obj <- NULL
-  table_name <- NULL
-  if (is.null(.context)) {
-    table_obj <- rlang::eval_tidy(table_quo)
-    stopifnot(rlang::is_vector(table_obj))
-  } else {
-    stopifnot(rlang::is_vector(.context))
-    table_name <- select_names(table_quo, as.list(.context))
-    if (length(table_name) != 1) stop("'table' must refer to exactly 1 table,
-      not ", length(table_name))
-    table_obj <- .context[[table_name]]
-  }
-  cols_names <- select_names(cols_quo, table_obj)
-  result <- cols_names
-  attr(result, "table") <- table_name
-  result
+parse_reference_specifier <- function(expr) {
+  is_subset_expr <- rlang::is_call(expr) &&
+    rlang::as_string(expr[[1]]) %in% c("$", "[")
+  if (is_subset_expr) list(
+    table = expr[[2]],
+    cols =
+      if (expr[[1]] == "$")
+        expr[[3]]
+      else if (expr[[1]] == "[")
+        rlang::call2("c", !!!as.list(expr[-(1:2), drop = FALSE]))
+      else stopifnot(FALSE)
+  ) else list(
+    table = expr,
+    cols = NULL
+  )
 }

@@ -11,20 +11,22 @@ cstr_unique_key(cols)
 
 cstr_primary_key(cols)
 
-cstr_foreign_key(cols, ref_cols)
+cstr_foreign_key(cols, reference)
 }
 \arguments{
-\item{cols}{The columns to set constraints on}
+\item{cols}{<\code{tidy-select}> The columns to set constraints on}
 
-\item{ref_cols}{For \code{cstr_foreign_key()}, the reference columns for the
-foreign key. Specify columns from a different table using \verb{\%from\%}, e.g.,
-\code{reference_column \%from\% reference_table}}
+\item{reference}{<\code{tidy-select}> For \code{cstr_foreign_key()}, the table and columns to
+reference. If the key columns and reference columns have the same names,
+you can specify just the table. Otherwise, specify the columns using
+\code{table[columns]} where \code{columns} is a tidy-select specification.}
 }
 \value{
-These functions return closures of class \verb{<cstr_builder>}, which
-take a qualifyr data set and data frame as arguments and return an object
-inheriting from \verb{<qf_constraint>}. This implementation detail allows these
-functions to be used with the replacement-form function \verb{constraints<-}.
+These functions return closures of class
+\verb{<qf_constraint_specifier>}, which take a qualifyr data set and data frame
+as arguments and return an object inheriting from \verb{<qf_constraint>}. This
+unfortunate implementation detail allows omitting the data set and table
+when used in the RHS of the replace-form function \verb{constraints<-}.
 }
 \description{
 Functions to specify constraints for qualifyr data frames. The

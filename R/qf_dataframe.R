@@ -39,10 +39,14 @@ constraints.qf_dataframe <- function(x, ...) {
   constraints_objects <- value |> purrr::modify(\(cstr) {
     if (is_qf_constraint(cstr)) {
       cstr
-    } else if (rlang::is_function(cstr) && inherits(cstr, "cstr_builder")) {
-      cstr(dataset, x)
+    } else if (
+      rlang::is_function(cstr) &&
+      inherits(cstr, "qf_constraint_specifier")
+    ) {
+      cstr(.dataset = dataset, .table = x)
     } else stop("Elements of 'value' must be either constraint objects or
-      constraint builders returned by cstr_* functions")
+      constraint specifiers returned by cstr_* functions, not ",
+      typeof(cstr))
   })
 
   attr(x, "constraints") <- constraints_objects
