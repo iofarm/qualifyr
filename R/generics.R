@@ -1,11 +1,11 @@
 
 
-#' Check constraints on qualifyr data set or data frame
+#' Check constraints on qualifyr data set or table
 #'
-#' Checks that a data set or data frame satisfies the constraints set on it.
+#' Checks that a data set or table satisfies the constraints set on it.
 #'
-#' @param x A `<qf_dataset>` or `<qf_dataframe>` object
-#' @param dataset If `x` is a data frame with foreign key constraints, the
+#' @param x A `<qf_dataset>` or `<qf_table>` object
+#' @param dataset If `x` is a table with foreign key constraints, the
 #'   data set to reference foreign keys against. Can be `NULL` if `x` has no
 #'   foreign keys.
 #' @param ... Further arguments passed to methods
@@ -15,9 +15,9 @@ check_constraints <- function(x, ...) {
   UseMethod("check_constraints")
 }
 
-#' Get or set constraints of a qualifyr data frame
+#' Get or set constraints of a qualifyr table
 #'
-#' @param x A qualifyr data set or data frame to set constraints on
+#' @param x A qualifyr data set or table to set constraints on
 #' @param table <[`tidy-select`][constraints]> If `x` is a
 #'   data set, the table(s) to set constraints on, either as a character string
 #'   or bare symbol

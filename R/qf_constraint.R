@@ -95,7 +95,7 @@ utils::globalVariables(c(".dataset", ".table"))
 #'
 #' @title Constraints for relational data structures
 #'
-#' @description Functions to specify constraints for qualifyr data frames. The
+#' @description Functions to specify constraints for qualifyr tables. The
 #'   return values should be stored in a list and passed to `constraints<-`.
 #'
 #' @param cols <`tidy-select`> The columns to set constraints on
@@ -105,7 +105,7 @@ utils::globalVariables(c(".dataset", ".table"))
 #'   `table[columns]` where `columns` is a tidy-select specification.
 #'
 #' @returns These functions return closures of class
-#'   `<qf_constraint_specifier>`, which take a qualifyr data set and data frame
+#'   `<qf_constraint_specifier>`, which take a qualifyr data set and table
 #'   as arguments and return an object inheriting from `<qf_constraint>`. This
 #'   unfortunate implementation detail allows omitting the data set and table
 #'   when used in the RHS of the replace-form function `constraints<-`.
@@ -167,14 +167,14 @@ cstr_foreign_key <- function(cols, reference) {
 
 # Check constraints ============================================================
 
-check_constraint <- function(constraint, dataframe, dataset) {
+check_constraint <- function(constraint, table, dataset) {
   UseMethod("check_constraint")
 }
 
 #' @noRd
 #' @exportS3Method check_constraint cstr_unique_key
-check_constraint.cstr_unique_key <- function(constraint, dataframe, dataset) {
-  key_cols <- dataframe[as.character(constraint)]
+check_constraint.cstr_unique_key <- function(constraint, table, dataset) {
+  key_cols <- table[as.character(constraint)]
 
   is_duplicated <- duplicated(key_cols) | duplicated(key_cols, fromLast = TRUE)
 
@@ -185,8 +185,8 @@ check_constraint.cstr_unique_key <- function(constraint, dataframe, dataset) {
 
 #' @noRd
 #' @exportS3Method check_constraint cstr_primary_key
-check_constraint.cstr_primary_key <- function(constraint, dataframe, dataset) {
-  key_cols <- dataframe[as.character(constraint)]
+check_constraint.cstr_primary_key <- function(constraint, table, dataset) {
+  key_cols <- table[as.character(constraint)]
 
   is_na <- key_cols |> purrr::map(is.na) |> purrr::reduce(`|`)
 
@@ -196,11 +196,11 @@ check_constraint.cstr_primary_key <- function(constraint, dataframe, dataset) {
 
 #' @noRd
 #' @exportS3Method check_constraint cstr_foreign_key
-check_constraint.cstr_foreign_key <- function(constraint, dataframe, dataset) {
-  key_cols <- dataframe[as.character(constraint)]
+check_constraint.cstr_foreign_key <- function(constraint, table, dataset) {
+  key_cols <- table[as.character(constraint)]
   ref_table_chr <- attr(constraint, "ref_table")
   ref_table <-
-    if (is.null(ref_table_chr)) dataframe
+    if (is.null(ref_table_chr)) table
     else dataset[[ref_table_chr]]
   ref_cols <- ref_table[attr(constraint, "ref_cols")]
 

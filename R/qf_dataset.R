@@ -1,6 +1,6 @@
 new_qf_dataset <- function(x) {
   stopifnot(is.list(x))
-  stopifnot(all(purrr::map_lgl(x, is_qf_dataframe)))
+  stopifnot(all(purrr::map_lgl(x, is_qf_table)))
   stopifnot(all(nchar(names(x)) > 0))
 
   structure(x, class = "qf_dataset")
@@ -13,12 +13,12 @@ new_qf_dataset <- function(x) {
 #'   will be used, which may or may not be a sensible default.
 #'
 #' @returns A new <qf_dataset> object containing the tables provided in `...`
-#'   (after being converted to <qf_dataframe> objects by `as_qf_dataframe()`).
+#'   (after being converted to <qf_table> objects by `as_qf_table()`).
 #'
 #' @export
 qf_dataset <- function(...) {
   dataframe_exprs <- rlang::enexprs(...) |> purrr::map_chr(deparse)
-  dataframe_list <- list(...) |> purrr::modify(as_qf_dataframe)
+  dataframe_list <- list(...) |> purrr::modify(as_qf_table)
   names(dataframe_list) <- ifelse(
     nchar(names(dataframe_list) > 0),
     names(dataframe_list), dataframe_exprs

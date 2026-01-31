@@ -23,12 +23,12 @@ you can specify just the table. Otherwise, specify the columns using
 }
 \value{
 These functions return closures of class
-\verb{<qf_constraint_specifier>}, which take a qualifyr data set and data frame
+\verb{<qf_constraint_specifier>}, which take a qualifyr data set and table
 as arguments and return an object inheriting from \verb{<qf_constraint>}. This
 unfortunate implementation detail allows omitting the data set and table
 when used in the RHS of the replace-form function \verb{constraints<-}.
 }
 \description{
-Functions to specify constraints for qualifyr data frames. The
+Functions to specify constraints for qualifyr tables. The
 return values should be stored in a list and passed to \verb{constraints<-}.
 }
