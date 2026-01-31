@@ -1,3 +1,5 @@
+# Class definition =============================================================
+
 new_qf_constraint <- function(cols, subclass, ...) {
   stopifnot(is.character(cols))
   stopifnot(is.character(subclass))
@@ -13,36 +15,25 @@ is_qf_constraint <- function(x) {
   inherits(x, "qf_constraint")
 }
 
-#' Get or set constraints of a qualifyr data frame
-#'
-#' @param x A qualifyr data set or data frame to set constraints on
-#' @param table <[`tidy-select`][constraints]> If `x` is a
-#'   data set, the table(s) to set constraints on, either as a character string
-#'   or bare symbol
-#' @param dataset If `x` is a data frame, the data set used to reference
-#'   foreign keys against. Only needed if `value` contains a foreign key.
-#' @param ... Additional arguments passed to methods
-#' @param value A list of constraints (or constraint builder functions)
-#'   created with `cstr_*()` functions.
-#'
-#' @returns For `constraints`, the list of `<qf_constraint>` objects associated
-#'   with the table. For `constraints<-`, an updated version of `x` with
-#'   constraints set.
-#'
-#' @export
-constraints <- function(x, ...) {
-  UseMethod("constraints")
-}
-#' @rdname constraints
-#' @export
-`constraints<-` <- function(x, ..., value) {
-  UseMethod("constraints<-")
-}
+# Constraint specifier helpers =================================================
 
-check_constraint <- function(constraint, dataframe, dataset) {
-  UseMethod("check_constraint")
-}
-
+#' Create a constraint specifier
+#'
+#' Constraint declarations (`cstr_*()` functions) are meant to be  called in the
+#' RHS of the replacement-form function `constraints<-`. Because replacement-
+#' form functions eagerly evaluate the RHS, we cannot use typical rlang-style
+#' metaprogramming to enrich the environment of the RHS expressions with
+#' dataset and table information. Instead, the `cstr_*()` functions return
+#' closures that enclose their tidy-select specifications and return  constraint
+#' objects when given context information.
+#'
+#' @param code A raw expression to be used as the body of the constraint
+#'   specifier function
+#'
+#' @returns A new closure of class `<qf_constraint_specifier>` that takes two
+#'   arguments, `.dataset` and `.table`, and returns a `<qf_constraint>` object.
+#'
+#' @noRd
 new_constraint_specifier <- function(code) {
   structure(
     rlang::new_function(
@@ -53,6 +44,48 @@ new_constraint_specifier <- function(code) {
     class = "qf_constraint_specifier"
   )
 }
+
+#' Parse reference specifiers for foreign keys
+#'
+#' This function implements and extension to the tidyselect domain-specific
+#' language that enables specifying a table and columns in a single expression.
+#'
+#' @param expr A defused expression specifying a table and columns according to
+#'   the tidyselect extension described in 'details'
+#'
+#' @returns A list with two elements, each a tidyselect expression: `$table`, the
+#'   expression specifying the table, and `$cols`, the expression specifying the
+#'   columns.
+#'
+#' @details To select columns from a specific table, use either:
+#'
+#'   * `table$column`, where `table` and `column` are tidyselect specifiers for
+#'   the table and columns, respectively; or
+#'   * `table[column1, column2, ...]` where `table` specifies the table and
+#'   `column1, column2, ...` specify columns from `table`
+#'
+#' If `expr` is not a call to `$` or `[`, then it will be returned as `$table`
+#' while `$col` is `NULL`.
+#'
+#' @noRd
+parse_reference_specifier <- function(expr) {
+  is_subset_expr <- rlang::is_call(expr) &&
+    rlang::as_string(expr[[1]]) %in% c("$", "[")
+  if (is_subset_expr) list(
+    table = expr[[2]],
+    cols =
+      if (expr[[1]] == "$")
+        expr[[3]]
+    else if (expr[[1]] == "[")
+      rlang::call2("c", !!!as.list(expr[-(1:2), drop = FALSE]))
+    else stopifnot(FALSE)
+  ) else list(
+    table = expr,
+    cols = NULL
+  )
+}
+
+# Constraint declarations ======================================================
 
 # declare data pronouns to avoid R CMD CHECK notes
 utils::globalVariables(c(".dataset", ".table"))
@@ -132,6 +165,12 @@ cstr_foreign_key <- function(cols, reference) {
   })
 }
 
+# Check constraints ============================================================
+
+check_constraint <- function(constraint, dataframe, dataset) {
+  UseMethod("check_constraint")
+}
+
 #' @noRd
 #' @exportS3Method check_constraint cstr_unique_key
 check_constraint.cstr_unique_key <- function(constraint, dataframe, dataset) {
@@ -172,21 +211,4 @@ check_constraint.cstr_foreign_key <- function(constraint, dataframe, dataset) {
   result <- matches
   attr(result, "constraint") <- constraint
   result
-}
-
-parse_reference_specifier <- function(expr) {
-  is_subset_expr <- rlang::is_call(expr) &&
-    rlang::as_string(expr[[1]]) %in% c("$", "[")
-  if (is_subset_expr) list(
-    table = expr[[2]],
-    cols =
-      if (expr[[1]] == "$")
-        expr[[3]]
-      else if (expr[[1]] == "[")
-        rlang::call2("c", !!!as.list(expr[-(1:2), drop = FALSE]))
-      else stopifnot(FALSE)
-  ) else list(
-    table = expr,
-    cols = NULL
-  )
 }

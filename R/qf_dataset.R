@@ -26,14 +26,7 @@ qf_dataset <- function(...) {
   new_qf_dataset(dataframe_list)
 }
 
-#' @name type-predicates
 #' @rdname type-predicates
-#'
-#' @title Test for qualifyr objects
-#'
-#' @param x The object to test the type of
-#'
-#' @returns `TRUE` if `x` inherits from the specified class; `FALSE` otherwise.
 #' @export
 is_qf_dataset <- function(x) {
   inherits(x, "qf_dataset")
@@ -55,23 +48,6 @@ constraints.qf_dataset <- function(x, table, ...) {
     constraints(x[[table_chr]], dataset = x) <<- value
   })
   x
-}
-
-#' @rdname check_constraints
-#'
-#' @title Check constraints on qualifyr data set or data frame
-#'
-#' @description
-#' Checks that a data set or data frame satisfies the constraints set on it.
-#'
-#' @param x A `<qf_dataset>` or `<qf_dataframe>` object
-#' @param dataset If `x` is a data frame with foreign key constraints, the
-#'   data set to reference foreign keys against. Can be `NULL` if `x` has no
-#'   foreign keys.
-#' @param ... Further arguments passed to methods
-#'
-check_constraints <- function(x, ...) {
-  UseMethod("check_constraints")
 }
 
 #' @rdname check_constraints

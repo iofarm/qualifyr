@@ -11,6 +11,17 @@ new_qf_dataframe <- function(x, constraints) {
   )
 }
 
+#' Convert a data frame to a qualifyr data frame
+#'
+#' Create a qualifyr data frame object from a data frame
+#'
+#' @param x Any object inheriting from class `<data.frame>`
+#'
+#' @returns A copy of `x` with class `<qf_dataframe>` (retaining previous class
+#'   information as superclasses) and the `constraints` attribute set to an
+#'   empty list.
+#'
+#' @export
 as_qf_dataframe <- function(x) {
   if (!inherits(x, "data.frame")) {
     x <- as.data.frame(x)
@@ -29,6 +40,7 @@ is_qf_dataframe <- function(x) {
 constraints.qf_dataframe <- function(x, ...) {
   attr(x, "constraints")
 }
+
 #' @rdname constraints
 #' @exportS3Method "constraints<-" qf_dataframe
 `constraints<-.qf_dataframe` <- function(x, dataset = NULL, ..., value) {
