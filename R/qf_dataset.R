@@ -20,7 +20,7 @@ qf_dataset <- function(...) {
   dataframe_exprs <- rlang::enexprs(...) |> purrr::map_chr(deparse)
   dataframe_list <- list(...) |> purrr::modify(as_qf_table)
   names(dataframe_list) <- ifelse(
-    nchar(names(dataframe_list) > 0),
+    nchar(names(dataframe_list)) > 0,
     names(dataframe_list), dataframe_exprs
   )
   new_qf_dataset(dataframe_list)
