@@ -1,5 +1,3 @@
-
-
 #' Check constraints on qualifyr data set or table
 #'
 #' Checks that a data set or table satisfies the constraints set on it.
