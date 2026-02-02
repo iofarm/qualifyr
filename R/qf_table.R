@@ -1,3 +1,5 @@
+# Class definition =============================================================
+
 new_qf_table <- function(x, constraints) {
   stopifnot(is.data.frame(x))
   if (!is.null(constraints)) stopifnot(
@@ -23,10 +25,13 @@ new_qf_table <- function(x, constraints) {
 #'
 #' @export
 as_qf_table <- function(x) {
-  if (!inherits(x, "data.frame")) {
-    x <- as.data.frame(x)
+  if (is_qf_table(x)) x
+  else {
+    if (!inherits(x, "data.frame")) {
+      x <- as.data.frame(x)
+    }
+    new_qf_table(x, list())
   }
-  new_qf_table(x, list())
 }
 
 #' @rdname type-predicates
@@ -35,33 +40,56 @@ is_qf_table <- function(x) {
   inherits(x, "qf_table")
 }
 
-#' @rdname constraints
-#' @exportS3Method constraints qf_table
-constraints.qf_table <- function(x, ...) {
-  attr(x, "constraints")
+# Methods ======================================================================
+
+#' @noRd
+#' @exportS3Method utils::str qf_table
+str.qf_table <- function(object, ...) {
+  cat("<qf_table> [", nrow(object), " x ", ncol(object), "]\n", sep = "")
+  cat("    Columns: ", paste(colnames(object), collapse = ", "), "\n", sep = "")
+  cat(
+    "    Constraints: ",
+    paste(purrr::map(constraints(object),
+      \(cstr) paste("<", class(cstr)[[1]], ">", sep = "")
+    ), collapse = ", "),
+    "\n", sep = ""
+  )
 }
 
+# Constraint handling ==========================================================
+
+#' Get or set constraints of a qualifyr table
+#'
+#' @param x A qualifyr table to set constraints on
+#' @param value A list of constraints (or constraint specifiers), as returned
+#'   by `cstr_*()` functions.
+#'
+#' @returns For `constraints`, the list of `<qf_constraint>` objects associated
+#'   with the table. For `constraints<-`, an updated version of `x` with
+#'   constraints set.
+#'
+#' @details If `value` contains foreign key specifiers referencing another
+#'   table, `x` must have the `context` attribute set, otherwise `constraints<-`
+#'   will signal an error. Tables returned by subsetting a qualifyr dataset
+#'   using `$`, `[[`, or `[` have this attribute set.
+#'
 #' @rdname constraints
-#' @exportS3Method "constraints<-" qf_table
-`constraints<-.qf_table` <- function(x, dataset = NULL, ..., value) {
+#' @export
+constraints <- function(x) {
+  attr(x, "constraints")
+}
+#' @rdname constraints
+#' @export
+`constraints<-` <- function(x, value) {
   if (!rlang::is_list(value)) stop("'value' must be a list")
-  if (!is.null(dataset)) if (!is_qf_dataset(dataset)) stop("'dataset' must be
-    NULL or a <qf_dataset> object")
-
-  constraints_objects <- value |> purrr::modify(\(cstr) {
-    if (is_qf_constraint(cstr)) {
+  attr(x, "constraints") <- purrr::modify(value, \(cstr)
+    if (inherits(cstr, "qf_constraint_specifier"))
+      (cstr)(x)
+    else if (inherits(cstr, "qf_constraint"))
       cstr
-    } else if (
-      rlang::is_function(cstr) &&
-      inherits(cstr, "qf_constraint_specifier")
-    ) {
-      cstr(.dataset = dataset, .table = x)
-    } else stop("Elements of 'value' must be either constraint objects or
-      constraint specifiers returned by cstr_* functions, not ",
+    else stop("'value' must contain only <qf_constraint> objects, not ",
       typeof(cstr))
-  })
-
-  attr(x, "constraints") <- constraints_objects
+  )
   x
 }
 

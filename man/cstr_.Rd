@@ -16,17 +16,18 @@ cstr_foreign_key(cols, reference)
 \arguments{
 \item{cols}{<\code{tidy-select}> The columns to set constraints on}
 
-\item{reference}{<\code{tidy-select}> For \code{cstr_foreign_key()}, the table and columns to
-reference. If the key columns and reference columns have the same names,
-you can specify just the table. Otherwise, specify the columns using
-\code{table[columns]} where \code{columns} is a tidy-select specification.}
+\item{reference}{<\code{tidy-select}> For \code{cstr_foreign_key()}, the table and
+columns to reference. If the key columns and reference columns have the
+same names, you can specify just the table. Otherwise, specify the columns
+using \code{table[columns]} where \code{columns} is a tidy-select specification.}
 }
 \value{
 These functions return closures of class
-\verb{<qf_constraint_specifier>}, which take a qualifyr data set and table
-as arguments and return an object inheriting from \verb{<qf_constraint>}. This
-unfortunate implementation detail allows omitting the data set and table
-when used in the RHS of the replace-form function \verb{constraints<-}.
+\verb{<qf_constraint_specifier>}, which take a qualifyr table and return an
+object inheriting from \verb{<qf_constraint>}. This unfortunate implementation
+detail allows omitting the data set and table when used in the RHS of the
+replace-form function \verb{constraints<-}, making front-end syntax a little
+nicer.
 }
 \description{
 Functions to specify constraints for qualifyr tables. The

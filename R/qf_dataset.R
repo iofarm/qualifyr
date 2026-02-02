@@ -1,3 +1,5 @@
+# Class definition =============================================================
+
 new_qf_dataset <- function(x) {
   stopifnot(is.list(x))
   stopifnot(all(purrr::map_lgl(x, is_qf_table)))
@@ -32,23 +34,7 @@ is_qf_dataset <- function(x) {
   inherits(x, "qf_dataset")
 }
 
-
-#' @rdname constraints
-#' @exportS3Method constraints qf_dataset
-constraints.qf_dataset <- function(x, table, ...) {
-  table_chr <- rlang::as_string(rlang::ensym(table))
-  constraints(x[[table_chr]])
-}
-
-#' @rdname constraints
-#' @exportS3Method "constraints<-" qf_dataset
-`constraints<-.qf_dataset` <- function(x, table, ..., value) {
-  table_chrs <- select_names(rlang::enquo(table), as.list(x))
-  purrr::walk(table_chrs, \(table_chr) {
-    constraints(x[[table_chr]], dataset = x) <<- value
-  })
-  x
-}
+# Methods ======================================================================
 
 #' @rdname check_constraints
 #' @exportS3Method check_constraints qf_dataset
@@ -60,4 +46,69 @@ check_constraints.qf_dataset <- function(x, ...) {
 #' @exportS3Method base::as.list qf_dataset
 as.list.qf_dataset <- function(x, ...) {
   unclass(x)
+}
+
+#' @noRd
+#' @exportS3Method base::`$` qf_dataset
+`$.qf_dataset` <- function(x, name) {
+  y <- NextMethod()
+  attr(y, "context") <- as.list(x)
+  y
+}
+#' @noRd
+#' @exportS3Method base::`[[` qf_dataset
+`[[.qf_dataset` <- function(x, i) {
+  y <- NextMethod()
+  attr(y, "context") <- as.list(x)
+  y
+}
+#' @noRd
+#' @exportS3Method base::`[` qf_dataset
+`[.qf_dataset` <- function(x, i) {
+  y <- NextMethod()
+  purrr::modify(y, \(table) {
+    attr(table, "context") <- as.list(x)
+    table
+  })
+}
+#' @noRd
+#' @exportS3Method base::`$` qf_dataset
+`$<-.qf_dataset` <- function(x, name, value) {
+  value <- as_qf_table(value)
+  attr(value, "context") <- NULL
+  NextMethod()
+}
+
+#' @noRd
+#' @exportS3Method base::`[[` qf_dataset
+`[[<-.qf_dataset` <- function(x, i, value) {
+  value <- as_qf_table(value)
+  attr(value, "context") <- NULL
+  NextMethod()
+}
+
+#' @noRd
+#' @exportS3Method base::`[` qf_dataset
+`[<-.qf_dataset` <- function(x, i, value) {
+  if (is_qf_table(value)) {
+    attr(value, "context") <- NULL
+  } else if (is.list(value)) {
+    value <- purrr::modify(value, \(table) {
+      table <- as_qf_table(table)
+      attr(table, "context") <- NULL
+      table
+    })
+  }
+  NextMethod()
+}
+
+#' @noRd
+#' @exportS3Method utils::str qf_dataset
+str.qf_dataset <- function(object, ...) {
+  cat("<qf_dataset>\n")
+  cat("qualifyr data set with ", length(object), " tables: \n", sep = "")
+  purrr::iwalk(as.list(object), \(table, name) {
+    cat(" $ ", name, ": ", sep = "")
+    utils::str(table)
+  })
 }

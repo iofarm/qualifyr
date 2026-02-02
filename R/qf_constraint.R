@@ -1,12 +1,10 @@
 # Class definition =============================================================
 
-new_qf_constraint <- function(cols, subclass, ...) {
-  stopifnot(is.character(cols))
+new_qf_constraint <- function(x, subclass) {
+  stopifnot(is.list(x))
   stopifnot(is.character(subclass))
-  dots <- rlang::enexprs(...)
-  stopifnot(all(sapply(names(dots), nchar) > 0))
 
-  structure(cols, class = c(subclass, "qf_constraint"), ...)
+  structure(x, class = c(subclass, "qf_constraint"))
 }
 
 #' @rdname type-predicates
@@ -22,7 +20,7 @@ is_qf_constraint <- function(x) {
 #' Constraint declarations (`cstr_*()` functions) are meant to be  called in the
 #' RHS of the replacement-form function `constraints<-`. Because replacement-
 #' form functions eagerly evaluate the RHS, we cannot use typical rlang-style
-#' metaprogramming to enrich the environment of the RHS expressions with
+#' tidy evaluation to enrich the environment of the RHS expressions with
 #' dataset and table information. Instead, the `cstr_*()` functions return
 #' closures that enclose their tidy-select specifications and return  constraint
 #' objects when given context information.
@@ -30,18 +28,18 @@ is_qf_constraint <- function(x) {
 #' @param code A raw expression to be used as the body of the constraint
 #'   specifier function
 #'
-#' @returns A new closure of class `<qf_constraint_specifier>` that takes two
-#'   arguments, `.dataset` and `.table`, and returns a `<qf_constraint>` object.
+#' @returns A new closure of class `<qf_constraint_specifier>` that takes one
+#'   argument (`.table`) and returns a `<qf_constraint>` object.
 #'
 #' @noRd
 new_constraint_specifier <- function(code) {
   structure(
     rlang::new_function(
-      alist(.dataset = , .table = ),
+      alist(.table = ),
       body = rlang::enexpr(code),
       env = rlang::caller_env()
     ),
-    class = "qf_constraint_specifier"
+    class = c("qf_constraint_specifier", "qf_constraint")
   )
 }
 
@@ -88,7 +86,7 @@ parse_reference_specifier <- function(expr) {
 # Constraint declarations ======================================================
 
 # declare data pronouns to avoid R CMD CHECK notes
-utils::globalVariables(c(".dataset", ".table"))
+utils::globalVariables(c(".table"))
 
 #' @name cstr_
 #' @rdname cstr_
@@ -99,16 +97,17 @@ utils::globalVariables(c(".dataset", ".table"))
 #'   return values should be stored in a list and passed to `constraints<-`.
 #'
 #' @param cols <`tidy-select`> The columns to set constraints on
-#' @param reference <`tidy-select`> For `cstr_foreign_key()`, the table and columns to
-#'   reference. If the key columns and reference columns have the same names,
-#'   you can specify just the table. Otherwise, specify the columns using
-#'   `table[columns]` where `columns` is a tidy-select specification.
+#' @param reference <`tidy-select`> For `cstr_foreign_key()`, the table and
+#'   columns to reference. If the key columns and reference columns have the
+#'   same names, you can specify just the table. Otherwise, specify the columns
+#'   using `table[columns]` where `columns` is a tidy-select specification.
 #'
 #' @returns These functions return closures of class
-#'   `<qf_constraint_specifier>`, which take a qualifyr data set and table
-#'   as arguments and return an object inheriting from `<qf_constraint>`. This
-#'   unfortunate implementation detail allows omitting the data set and table
-#'   when used in the RHS of the replace-form function `constraints<-`.
+#'   `<qf_constraint_specifier>`, which take a qualifyr table and return an
+#'   object inheriting from `<qf_constraint>`. This unfortunate implementation
+#'   detail allows omitting the data set and table when used in the RHS of the
+#'   replace-form function `constraints<-`, making front-end syntax a little
+#'   nicer.
 NULL
 
 #' @rdname cstr_
@@ -116,8 +115,10 @@ NULL
 cstr_unique_key <- function(cols) {
   cols_quo <- rlang::enquo(cols)
   new_constraint_specifier({
-    cols_chr <- select_names(cols_quo, .table)
-    new_qf_constraint(cols_chr, "cstr_unique_key")
+    new_qf_constraint(
+      list(cols = select_names(cols_quo, .table)),
+      "cstr_unique_key"
+    )
   })
 }
 
@@ -126,8 +127,10 @@ cstr_unique_key <- function(cols) {
 cstr_primary_key <- function(cols) {
   cols_quo <- rlang::enquo(cols)
   new_constraint_specifier({
-    cols_chr <- select_names(cols_quo, .table)
-    new_qf_constraint(cols_chr, c("cstr_primary_key", "cstr_unique_key"))
+    new_qf_constraint(
+      list(cols = select_names(cols_quo, .table)),
+      c("cstr_primary_key", "cstr_unique_key")
+    )
   })
 }
 
@@ -138,43 +141,52 @@ cstr_foreign_key <- function(cols, reference) {
   ref_quo  <- rlang::enquo(reference)
   ref_exprs <- parse_reference_specifier(rlang::quo_squash(ref_quo))
   ref_env <- rlang::quo_get_env(ref_quo)
+  ref_table_quo <- rlang::new_quosure(ref_exprs$table, ref_env)
   ref_cols_quo <-
     if (is.null(ref_exprs$cols)) cols_quo
     else rlang::new_quosure(ref_exprs$cols, ref_env)
-  ref_table_quo <- rlang::new_quosure(ref_exprs$table, ref_env)
 
   new_constraint_specifier({
     cols_chr <- select_names(cols_quo, .table)
-    ref_table_chr <- select_names(ref_table_quo, as.list(.dataset))
-    if (length(ref_table_chr) != 1) stop("A foreign key must have a single
-      reference table, but ", length(ref_table_chr), " were selected")
-    ref_table_obj <- .dataset[[ref_table_chr]]
-    ref_cols_chr <- select_names(ref_cols_quo, ref_table_obj)
-    ref_is_unique_key <- constraints(ref_table_obj) |>
-      purrr::some(\(constraint)
-        inherits(constraint, "cstr_unique_key") &&
-        setequal(constraint, ref_cols_chr)
+    ref_table_chr <- NULL
+    ref_table_obj <- NULL
+    if (rlang::quo_squash(ref_table_quo) == rlang::sym(".self")) {
+      ref_table_chr <- ".self"
+      ref_table_obj <- .table
+    } else {
+      if (is.null(attr(.table, "context"))) stop("'reference' refers to a separate
+      table, but no information on other tables in the dataset was found")
+      ref_table_chr <- select_names(
+        ref_table_quo,
+        attr(.table, "context")
       )
-    if (!ref_is_unique_key) stop("Reference columns must be a unique key")
+      if (length(ref_table_chr) != 1) stop("A foreign key must have a single
+      reference table, but ", length(ref_table_chr), " were selected")
+      ref_table_obj <- attr(.table, "context")[[ref_table_chr]]
+    }
+    ref_cols_chr <- select_names(ref_cols_quo, ref_table_obj)
 
     new_qf_constraint(
-      cols_chr,
-      ref_table = ref_table_chr, ref_cols = ref_cols_chr,
-      subclass = "cstr_foreign_key"
+      list(
+        cols = cols_chr,
+        ref_table = ref_table_chr,
+        ref_cols = ref_cols_chr
+      ),
+      "cstr_foreign_key"
     )
   })
 }
 
 # Check constraints ============================================================
 
-check_constraint <- function(constraint, table, dataset) {
+check_constraint <- function(constraint, table) {
   UseMethod("check_constraint")
 }
 
 #' @noRd
 #' @exportS3Method check_constraint cstr_unique_key
-check_constraint.cstr_unique_key <- function(constraint, table, dataset) {
-  key_cols <- table[as.character(constraint)]
+check_constraint.cstr_unique_key <- function(constraint, table) {
+  key_cols <- table[constraint$cols]
 
   is_duplicated <- duplicated(key_cols) | duplicated(key_cols, fromLast = TRUE)
 
@@ -185,8 +197,8 @@ check_constraint.cstr_unique_key <- function(constraint, table, dataset) {
 
 #' @noRd
 #' @exportS3Method check_constraint cstr_primary_key
-check_constraint.cstr_primary_key <- function(constraint, table, dataset) {
-  key_cols <- table[as.character(constraint)]
+check_constraint.cstr_primary_key <- function(constraint, table) {
+  key_cols <- table[constraint$cols]
 
   is_na <- key_cols |> purrr::map(is.na) |> purrr::reduce(`|`)
 
@@ -196,13 +208,18 @@ check_constraint.cstr_primary_key <- function(constraint, table, dataset) {
 
 #' @noRd
 #' @exportS3Method check_constraint cstr_foreign_key
-check_constraint.cstr_foreign_key <- function(constraint, table, dataset) {
-  key_cols <- table[as.character(constraint)]
-  ref_table_chr <- attr(constraint, "ref_table")
+check_constraint.cstr_foreign_key <- function(constraint, table) {
+  key_cols <- table[constraint$cols]
+  ref_table_chr <- constraint$ref_table
   ref_table <-
-    if (is.null(ref_table_chr)) table
-    else dataset[[ref_table_chr]]
-  ref_cols <- ref_table[attr(constraint, "ref_cols")]
+    if (ref_table_chr == ".self") table
+    else {
+      if (is.null(attr(table, "context"))) stop("Foreign key references a
+        separate table, but no information on other tables in the dataset was
+        found")
+      attr(table, "context")[[ref_table_chr]]
+    }
+  ref_cols <- ref_table[constraint$ref_cols]
 
   matches <- 1:ncol(key_cols) |>
     purrr::map(\(j) match(key_cols[j], ref_cols[j])) |>
