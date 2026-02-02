@@ -177,6 +177,50 @@ cstr_foreign_key <- function(cols, reference) {
   })
 }
 
+
+# Validate constraints =========================================================
+
+validate_constraint <- function(constraint, table) {
+  UseMethod("validate_constraint")
+}
+
+#' @noRd
+#' @exportS3Method validate_constraint qf_constraint
+validate_constraint.qf_constraint <- function(constraint, table) {
+  if (!setequal(constraint$cols, unique(constraint$cols)))
+    stop(pretty_class(constraint), " includes duplicate columns")
+  if (!all(constraint$cols %in% colnames(table)))
+    stop(pretty_class(constraint), " includes non-existent columns: ",
+      paste(setdiff(constraints$cols, colnames(table)), collapse = ", "))
+}
+
+#' @noRd
+#' @exportS3Method validate_constraint cstr_unique_key
+validate_constraint.cstr_unique_key <- function(constraint, table) {
+  NextMethod()
+}
+
+#' @noRd
+#' @exportS3Method validate_constraint cstr_primary_key
+validate_constraint.cstr_primary_key <- function(constraint, table) {
+  NextMethod()
+}
+
+#' @noRd
+#' @exportS3Method validate_constraint cstr_foreign_key
+validate_constraint.cstr_foreign_key <- function(constraint, table) {
+  NextMethod()
+  ref_table_obj <- resolve_table_reference(table, constraint$ref_table)
+  if (is.null(ref_table_obj))
+    stop(pretty_class(constraint), " references a non-existent table: ",
+      constraint$ref_table_obj)
+  references_unique_key <- purrr::some(constraints(ref_table_obj), \(cstr)
+    inherits(cstr, "cstr_unique_key") && setequal(constraint$cols, cstr$cols)
+  )
+  if (!references_unique_key)
+    stop(pretty_class(constraint), " does not reference a unique key")
+}
+
 # Check constraints ============================================================
 
 check_constraint <- function(constraint, table) {
@@ -229,3 +273,4 @@ check_constraint.cstr_foreign_key <- function(constraint, table) {
   attr(result, "constraint") <- constraint
   result
 }
+

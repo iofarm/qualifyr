@@ -90,6 +90,7 @@ constraints <- function(x) {
     else stop("'value' must contain only <qf_constraint> objects, not ",
       typeof(cstr))
   )
+  purrr::walk(attr(x, "constraints"), validate_constraint, x)
   x
 }
 

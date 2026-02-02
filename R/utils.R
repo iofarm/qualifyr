@@ -23,3 +23,12 @@ caller_mask <- function() {
     stop("Caller environment is not a data-masking context")
   mask
 }
+
+resolve_table_reference <- function(table, reference) {
+  if (reference == ".self") table
+  else attr(table, "context")[[reference]]
+}
+
+pretty_class <- function(object) {
+  paste0("<", class(object)[[1]], ">")
+}
