@@ -32,3 +32,9 @@ resolve_table_reference <- function(table, reference) {
 pretty_class <- function(object) {
   paste0("<", class(object)[[1]], ">")
 }
+
+browser_unless_str <- function() {
+  calls <- rlang::trace_back()$call
+  if (purrr::none(calls, \(call_n) call_n[[1]] == rlang::sym("str")))
+    browser()
+}

@@ -247,6 +247,7 @@ check_constraint.cstr_primary_key <- function(constraint, table) {
   is_na <- key_cols |> purrr::map(is.na) |> purrr::reduce(`|`)
 
   result <- NextMethod() & (!is_na)
+  attr(result, "constraint") <- constraint
   result
 }
 
@@ -265,11 +266,10 @@ check_constraint.cstr_foreign_key <- function(constraint, table) {
     }
   ref_cols <- ref_table[constraint$ref_cols]
 
-  matches <- 1:ncol(key_cols) |>
-    purrr::map(\(j) match(key_cols[j], ref_cols[j])) |>
-    purrr::reduce(`&`)
+  result <- 1:ncol(key_cols) |>
+    purrr::map(\(j) match(key_cols[[j]], ref_cols[[j]])) |>
+    purrr::pmap_lgl(\(...) length(setdiff(unique(c(...)), NA)) == 1)
 
-  result <- matches
   attr(result, "constraint") <- constraint
   result
 }

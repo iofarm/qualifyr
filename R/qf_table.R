@@ -81,7 +81,9 @@ constraints <- function(x) {
 #' @rdname constraints
 #' @export
 `constraints<-` <- function(x, value) {
-  if (!rlang::is_list(value)) stop("'value' must be a list")
+  if (!is_qf_table(x)) stop("'x' must be a qualifyr table, not ", typeof(x))
+  if (!rlang::is_list(value)) stop("'value' must be a list, not ",
+    typeof(value))
   attr(x, "constraints") <- purrr::modify(value, \(cstr)
     if (inherits(cstr, "qf_constraint_specifier"))
       (cstr)(x)
@@ -96,8 +98,8 @@ constraints <- function(x) {
 
 #' @rdname check_constraints
 #' @exportS3Method check_constraints qf_table
-check_constraints.qf_table <- function(x, dataset = NULL, ...) {
-  constraints(x) |> purrr::map(check_constraint, x, dataset)
+check_constraints.qf_table <- function(x) {
+  constraints(x) |> purrr::map(check_constraint, x)
 }
 
 

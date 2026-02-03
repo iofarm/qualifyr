@@ -2,10 +2,12 @@
 
 new_qf_dataset <- function(x) {
   stopifnot(is.list(x))
-  stopifnot(all(purrr::map_lgl(x, is_qf_table)))
+  stopifnot(purrr::every(x, is_qf_table))
   stopifnot(all(nchar(names(x)) > 0))
 
-  structure(x, class = "qf_dataset")
+  # inherits from "list" so that purrr functions treat <qf_dataset> objects
+  #   as vectors rather than scalars. See ?vctrs::`vector-checks` for details.
+  structure(x, class = c("qf_dataset", "list"))
 }
 
 #' Create a new qualifyr data set from data frames
@@ -19,13 +21,16 @@ new_qf_dataset <- function(x) {
 #'
 #' @export
 qf_dataset <- function(...) {
-  dataframe_exprs <- rlang::enexprs(...) |> purrr::map_chr(deparse)
-  dataframe_list <- list(...) |> purrr::modify(as_qf_table)
-  names(dataframe_list) <- ifelse(
-    nchar(names(dataframe_list)) > 0,
-    names(dataframe_list), dataframe_exprs
+  names_implicit <- rlang::enexprs(...) |> purrr::map_chr(deparse)
+  tables <- list(...) |> purrr::modify(as_qf_table)
+  names_explicit <-
+    if (is.null(names(tables))) rep("", length(tables))
+    else names(tables)
+  names(tables) <- ifelse(
+    nchar(names_explicit) > 0 & !is.na(names_explicit),
+    names_explicit, names_implicit
   )
-  new_qf_dataset(dataframe_list)
+  new_qf_dataset(tables)
 }
 
 #' @rdname type-predicates
@@ -38,28 +43,28 @@ is_qf_dataset <- function(x) {
 
 #' @rdname check_constraints
 #' @exportS3Method check_constraints qf_dataset
-check_constraints.qf_dataset <- function(x, ...) {
-  x |> purrr::map(check_constraints, x)
+check_constraints.qf_dataset <- function(x) {
+  x |> purrr::map(check_constraints)
 }
 
-#' @noRd
-#' @exportS3Method base::as.list qf_dataset
-as.list.qf_dataset <- function(x, ...) {
-  unclass(x)
-}
+# #' @noRd
+# #' @exportS3Method base::as.list qf_dataset
+# as.list.qf_dataset <- function(x, ...) {
+#   unclass(x)
+# }
 
 #' @noRd
 #' @exportS3Method base::`$` qf_dataset
 `$.qf_dataset` <- function(x, name) {
   y <- NextMethod()
-  attr(y, "context") <- as.list(x)
+  if (!is.null(y)) attr(y, "context") <- x
   y
 }
 #' @noRd
 #' @exportS3Method base::`[[` qf_dataset
 `[[.qf_dataset` <- function(x, i) {
   y <- NextMethod()
-  attr(y, "context") <- as.list(x)
+  if (!is.null(y)) attr(y, "context") <- x
   y
 }
 #' @noRd
@@ -67,12 +72,12 @@ as.list.qf_dataset <- function(x, ...) {
 `[.qf_dataset` <- function(x, i) {
   y <- NextMethod()
   purrr::modify(y, \(table) {
-    attr(table, "context") <- as.list(x)
+    if (!is.null(table)) attr(table, "context") <- x
     table
   })
 }
 #' @noRd
-#' @exportS3Method base::`$` qf_dataset
+#' @exportS3Method base::`$<-` qf_dataset
 `$<-.qf_dataset` <- function(x, name, value) {
   value <- as_qf_table(value)
   attr(value, "context") <- NULL
@@ -80,7 +85,7 @@ as.list.qf_dataset <- function(x, ...) {
 }
 
 #' @noRd
-#' @exportS3Method base::`[[` qf_dataset
+#' @exportS3Method base::`[[<-` qf_dataset
 `[[<-.qf_dataset` <- function(x, i, value) {
   value <- as_qf_table(value)
   attr(value, "context") <- NULL
@@ -88,7 +93,7 @@ as.list.qf_dataset <- function(x, ...) {
 }
 
 #' @noRd
-#' @exportS3Method base::`[` qf_dataset
+#' @exportS3Method base::`[<-` qf_dataset
 `[<-.qf_dataset` <- function(x, i, value) {
   if (is_qf_table(value)) {
     attr(value, "context") <- NULL
@@ -107,7 +112,7 @@ as.list.qf_dataset <- function(x, ...) {
 str.qf_dataset <- function(object, ...) {
   cat("<qf_dataset>\n")
   cat("qualifyr data set with ", length(object), " tables: \n", sep = "")
-  purrr::iwalk(as.list(object), \(table, name) {
+  purrr::iwalk(unclass(object), \(table, name) {
     cat(" $ ", name, ": ", sep = "")
     utils::str(table)
   })

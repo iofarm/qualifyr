@@ -60,3 +60,41 @@ test_that("alternative reference specification formats are equivalent", {
   expect_identical(constraints(dset2$flights), constraints(dset3$flights))
 
 })
+
+test_that("constraint checking works", {
+
+  dset <- withr::with_package("nycflights13",
+    qf_dataset(airlines, flights)
+  )
+
+  constraints(dset$airlines) <- list(
+    cstr_primary_key(carrier)
+  )
+  constraints(dset$flights) <- list(
+    cstr_primary_key(c(year, month, day, carrier, flight)),
+    cstr_foreign_key(carrier, airlines)
+  )
+
+  # Case 1: Primary key on 'flights' is invalid because of duplicate keys;
+  #   otherwise OK
+
+  result <- check_constraints(dset)
+
+  expect_true(all(result$airlines[[1]]))
+  expect_false(all(result$flights[[1]]))
+  expect_true(all(result$flights[[2]]))
+
+  # Case 2: Primary key on 'airlines' is invalid because of missing key for
+  #   Delta Airlines; Foreign key on 'flights' is invalid because it references
+  #   this primary key.
+
+  dset2 <- dset
+  dset2$airlines$carrier[dset$airlines$carrier == "DL"] <- NA
+
+  result2 <- check_constraints(dset2)
+
+  expect_false(all(result2$airlines[[1]]))
+  expect_false(all(result2$flights[[1]]))
+  expect_false(all(result2$flights[[2]]))
+
+})
