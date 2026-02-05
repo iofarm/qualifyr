@@ -14,6 +14,7 @@
 #'   attribute is set when `x` is accessed by subsetting a `<qf_dataset>`
 #'   object.
 #'
+#' @export
 check_constraints <- function(x) {
   UseMethod("check_constraints")
 }
