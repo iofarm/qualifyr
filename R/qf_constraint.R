@@ -13,7 +13,9 @@ is_qf_constraint <- function(x) {
   inherits(x, "qf_constraint")
 }
 
-# Constraint specifier helpers =================================================
+
+
+# Constraint specification =====================================================
 
 #' Create a constraint specifier
 #'
@@ -83,13 +85,12 @@ parse_reference_specifier <- function(expr) {
   )
 }
 
-# Constraint declarations ======================================================
-
 # declare data pronouns to avoid R CMD CHECK notes
 utils::globalVariables(c(".table"))
 
 #' @name cstr_
 #' @rdname cstr_
+#' @order 0
 #'
 #' @title Constraints for relational data structures
 #'
@@ -102,84 +103,29 @@ utils::globalVariables(c(".table"))
 #'   same names, you can specify just the table. Otherwise, specify the columns
 #'   using `table[columns]` where `columns` is a tidy-select specification.
 #'
-#' @returns These functions return closures of class
-#'   `<qf_constraint_specifier>`, which take a qualifyr table and return an
+#' @returns These functions return a closure of class
+#'   `<qf_constraint_specifier>`, which takes a qualifyr table and returns an
 #'   object inheriting from `<qf_constraint>`. This unfortunate implementation
 #'   detail allows omitting the data set and table when used in the RHS of the
 #'   replace-form function `constraints<-`, making front-end syntax a little
 #'   nicer.
 NULL
 
-#' @rdname cstr_
-#' @export
-cstr_unique_key <- function(cols) {
-  cols_quo <- rlang::enquo(cols)
-  new_constraint_specifier({
-    new_qf_constraint(
-      list(cols = select_names(cols_quo, .table)),
-      "cstr_unique_key"
-    )
-  })
-}
-
-#' @rdname cstr_
-#' @export
-cstr_primary_key <- function(cols) {
-  cols_quo <- rlang::enquo(cols)
-  new_constraint_specifier({
-    new_qf_constraint(
-      list(cols = select_names(cols_quo, .table)),
-      c("cstr_primary_key", "cstr_unique_key")
-    )
-  })
-}
-
-#' @rdname cstr_
-#' @export
-cstr_foreign_key <- function(cols, reference) {
-  cols_quo <- rlang::enquo(cols)
-  ref_quo  <- rlang::enquo(reference)
-  ref_exprs <- parse_reference_specifier(rlang::quo_squash(ref_quo))
-  ref_env <- rlang::quo_get_env(ref_quo)
-  ref_table_quo <- rlang::new_quosure(ref_exprs$table, ref_env)
-  ref_cols_quo <-
-    if (is.null(ref_exprs$cols)) cols_quo
-    else rlang::new_quosure(ref_exprs$cols, ref_env)
-
-  new_constraint_specifier({
-    cols_chr <- select_names(cols_quo, .table)
-    ref_table_chr <- NULL
-    ref_table_obj <- NULL
-    if (rlang::quo_squash(ref_table_quo) == rlang::sym(".self")) {
-      ref_table_chr <- ".self"
-      ref_table_obj <- .table
-    } else {
-      if (is.null(attr(.table, "context"))) stop("'reference' refers to a separate
-      table, but no information on other tables in the dataset was found")
-      ref_table_chr <- select_names(
-        ref_table_quo,
-        attr(.table, "context")
-      )
-      if (length(ref_table_chr) != 1) stop("A foreign key must have a single
-      reference table, but ", length(ref_table_chr), " were selected")
-      ref_table_obj <- attr(.table, "context")[[ref_table_chr]]
-    }
-    ref_cols_chr <- select_names(ref_cols_quo, ref_table_obj)
-
-    new_qf_constraint(
-      list(
-        cols = cols_chr,
-        ref_table = ref_table_chr,
-        ref_cols = ref_cols_chr
-      ),
-      "cstr_foreign_key"
-    )
-  })
-}
 
 
-# Validate constraints =========================================================
+# Generics =====================================================================
 
+#' Validate constraint structure
+#'
+#' Check that a constraint is well-formed. This does not check whether a
+#' constraint is satisfied; for that, use `check_constraint()`
+#'
+#' @param constraint A `<qf_constraint>` object
+#' @param table The table to which the constraint is applied
+#'
+#' @returns `TRUE` if the constraint is valid; throws an error otherwise
+#'
+#' @noRd
 validate_constraint <- function(constraint, table) {
   UseMethod("validate_constraint")
 }
@@ -192,85 +138,18 @@ validate_constraint.qf_constraint <- function(constraint, table) {
   if (!all(constraint$cols %in% colnames(table)))
     stop(pretty_class(constraint), " includes non-existent columns: ",
       paste(setdiff(constraints$cols, colnames(table)), collapse = ", "))
+  TRUE
 }
 
+#' Check that a constraint is satisfied
+#'
+#' @param constraint A `<qf_constraint>` object
+#' @param table The table to which the constraint is applied
+#'
+#' @returns A vector of length `nrow(table)` indicating whether the constraint
+#'   is satisfied for each row of the table.
+#'
 #' @noRd
-#' @exportS3Method validate_constraint cstr_unique_key
-validate_constraint.cstr_unique_key <- function(constraint, table) {
-  NextMethod()
-}
-
-#' @noRd
-#' @exportS3Method validate_constraint cstr_primary_key
-validate_constraint.cstr_primary_key <- function(constraint, table) {
-  NextMethod()
-}
-
-#' @noRd
-#' @exportS3Method validate_constraint cstr_foreign_key
-validate_constraint.cstr_foreign_key <- function(constraint, table) {
-  NextMethod()
-  ref_table_obj <- resolve_table_reference(table, constraint$ref_table)
-  if (is.null(ref_table_obj))
-    stop(pretty_class(constraint), " references a non-existent table: ",
-      constraint$ref_table_obj)
-  references_unique_key <- purrr::some(constraints(ref_table_obj), \(cstr)
-    inherits(cstr, "cstr_unique_key") && setequal(constraint$cols, cstr$cols)
-  )
-  if (!references_unique_key)
-    stop(pretty_class(constraint), " does not reference a unique key")
-}
-
-# Check constraints ============================================================
-
 check_constraint <- function(constraint, table) {
   UseMethod("check_constraint")
 }
-
-#' @noRd
-#' @exportS3Method check_constraint cstr_unique_key
-check_constraint.cstr_unique_key <- function(constraint, table) {
-  key_cols <- table[constraint$cols]
-
-  is_duplicated <- duplicated(key_cols) | duplicated(key_cols, fromLast = TRUE)
-
-  result <- !is_duplicated
-  attr(result, "constraint") <- constraint
-  result
-}
-
-#' @noRd
-#' @exportS3Method check_constraint cstr_primary_key
-check_constraint.cstr_primary_key <- function(constraint, table) {
-  key_cols <- table[constraint$cols]
-
-  is_na <- key_cols |> purrr::map(is.na) |> purrr::reduce(`|`)
-
-  result <- NextMethod() & (!is_na)
-  attr(result, "constraint") <- constraint
-  result
-}
-
-#' @noRd
-#' @exportS3Method check_constraint cstr_foreign_key
-check_constraint.cstr_foreign_key <- function(constraint, table) {
-  key_cols <- table[constraint$cols]
-  ref_table_chr <- constraint$ref_table
-  ref_table <-
-    if (ref_table_chr == ".self") table
-    else {
-      if (is.null(attr(table, "context"))) stop("Foreign key references a
-        separate table, but no information on other tables in the dataset was
-        found")
-      attr(table, "context")[[ref_table_chr]]
-    }
-  ref_cols <- ref_table[constraint$ref_cols]
-
-  result <- 1:ncol(key_cols) |>
-    purrr::map(\(j) match(key_cols[[j]], ref_cols[[j]])) |>
-    purrr::pmap_lgl(\(...) length(setdiff(unique(c(...)), NA)) == 1)
-
-  attr(result, "constraint") <- constraint
-  result
-}
-
