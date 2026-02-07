@@ -162,8 +162,7 @@ validate_constraint.qf_constraint <- function(constraint, table) {
 #' @param constraint A `<qf_constraint>` object
 #' @param table The table to which the constraint is applied
 #'
-#' @returns A vector of length `nrow(table)` indicating whether the constraint
-#'   is satisfied for each row of the table.
+#' @returns A list; see `check_constraints` for details.
 #'
 #' @noRd
 check_constraint <- function(constraint, table) {
@@ -183,6 +182,15 @@ check_constraint <- function(constraint, table) {
   )
 }
 
+#' Check that a constraint is satisfied, ignoring exceptions
+#'
+#' @param constraint A `<qf_constraint>` object
+#' @param table The table to which the constraint is applied
+#'
+#' @returns A vector of length `nrow(table)` indicating whether the constraint
+#'   is satisfied for each row of the table.
+#'
+#' @noRd
 check_constraint_strict <- function(constraint, table) {
   UseMethod("check_constraint_strict")
 }

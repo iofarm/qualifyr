@@ -19,7 +19,20 @@ check_constraints(x)
 If \code{x} is a \verb{<qf_table>} object, a list where each entry is the
 results from checking one constraint. If \code{x} is a \verb{<qf_dataset>} object, a
 list where each entry is the results from checking constraints on one
-table.
+table. The result from checking one constraint takes the form of a list
+with the elements:
+\itemize{
+\item \verb{$satsified} - A logical indicating whether the constraint was satisfied,
+not considering exceptions
+\item \verb{$handled} - A logical indicating whether every row either satisfied the
+constraint or was excepted
+\item \verb{$rows} - A list of logical vectors indicating whether each row:
+\itemize{
+\item \code{.. $satisfied} - satisfied the condition
+\item \code{.. $excepted} - was excepted
+\item \code{.. $handled} - satisfied the condition or was excepted
+}
+}
 }
 \description{
 Checks that a data set or table satisfies the constraints set on it.

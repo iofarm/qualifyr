@@ -68,7 +68,8 @@ test_that("constraint checking works", {
   )
 
   constraints(dset$airlines) <- list(
-    cstr_primary_key(carrier)
+    cstr_primary_key(carrier),
+    cstr_not_missing(name)
   )
   constraints(dset$flights) <- list(
     cstr_primary_key(c(year, month, day, carrier, flight)),
@@ -79,21 +80,21 @@ test_that("constraint checking works", {
   #   otherwise OK
 
   result <- check_constraints(dset)
-
   expect_true(result$airlines[[1]]$satisfied)
+  expect_true(result$airlines[[2]]$satisfied)
   expect_false(result$flights[[1]]$satisfied)
   expect_true(result$flights[[2]]$satisfied)
 
-  # Case 2: Primary key on 'airlines' is invalid because of missing key for
-  #   Delta Airlines; Foreign key on 'flights' is invalid because it references
-  #   this primary key.
+  # Case 2: Primary key and not-missing constraint on 'airlines' is invalid
+  #   because of missing values for Delta Airlines; Foreign key on 'flights' is
+  #   invalid because it references this primary key.
 
   dset2 <- dset
-  dset2$airlines$carrier[dset$airlines$carrier == "DL"] <- NA
+  dset2$airlines[dset$airlines$carrier == "DL", ] <- NA
 
   result2 <- check_constraints(dset2)
-
   expect_false(result2$airlines[[1]]$satisfied)
+  expect_false(result2$airlines[[2]]$satisfied)
   expect_false(result2$flights[[1]]$satisfied)
   expect_false(result2$flights[[2]]$satisfied)
 
