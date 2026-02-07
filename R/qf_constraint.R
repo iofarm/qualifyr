@@ -7,10 +7,26 @@ new_qf_constraint <- function(x, subclass) {
   structure(x, class = c(subclass, "qf_constraint"))
 }
 
-#' @rdname type-predicates
+#' @rdname type_predicates
 #' @export
 is_qf_constraint <- function(x) {
   inherits(x, "qf_constraint")
+}
+
+as_qf_constraint <- function(x, ...) {
+  UseMethod("as_qf_constraint")
+}
+
+#' @noRd
+#' @exportS3Method as_qf_constraint qf_constraint
+as_qf_constraint.qf_constraint <- function(x, ...) {
+  x
+}
+
+#' @noRd
+#' @exportS3Method as_qf_constraint qf_constraint_specifier
+as_qf_constraint.qf_constraint_specifier <- function(x, table, ...) {
+  (x)(table)
 }
 
 
@@ -151,5 +167,61 @@ validate_constraint.qf_constraint <- function(constraint, table) {
 #'
 #' @noRd
 check_constraint <- function(constraint, table) {
-  UseMethod("check_constraint")
+  satisfied_rows <- check_constraint_strict(constraint, table)
+  excepted_rows <- attr(constraint, "exceptions") |>
+    purrr::map(excepted_rows, table = table) |>
+    purrr::reduce(`|`, .init = rep(FALSE, nrow(table)))
+  handled_rows <- satisfied_rows | excepted_rows
+  list(
+    satisfied = all(satisfied_rows),
+    handled = all(handled_rows),
+    rows = list(
+      satisfied = satisfied_rows,
+      excepted = excepted_rows,
+      handled = handled_rows
+    )
+  )
+}
+
+check_constraint_strict <- function(constraint, table) {
+  UseMethod("check_constraint_strict")
+}
+
+
+
+# Exception handling ===========================================================
+
+#' Get or set the exceptions of a constraint
+#'
+#' @param x A constraint object
+#' @param value A list of exceptions
+#'
+#' @returns  For `exceptions`, the list of `<qf_exception>` objects associated
+#'   with the constraint For `exceptions<-`, an updated version of `x` with
+#'   exceptions set.
+#'
+#' @export
+exceptions <- function(x) {
+  if (!is_qf_constraint(x)) stop("'x' must be a <qf_constraint>, not ",
+    typeof(x))
+
+  attr(x, "exceptions")
+}
+
+#' @rdname exceptions
+#' @export
+`exceptions<-` <- function(x, value) {
+  if (!is_qf_constraint(x)) stop("'x' must be a <qf_constraint>, not ",
+    typeof(x))
+  exception_list <-
+  if (is_qf_exception(value))
+    list(value)
+  else if (is.list(value))
+    purrr::walk(value, \(expt) if (!is_qf_exception(expt)) stop("'value' must
+      contain only <qf_exception> objects, not ", typeof(expt)))
+  else stop("'value' must be a <qf_exception> or list of <qf_exception> objects,
+    not ", typeof(value))
+
+  attr(x, "exceptions") <- exception_list
+  x
 }

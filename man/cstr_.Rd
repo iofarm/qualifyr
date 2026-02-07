@@ -23,8 +23,8 @@ same names, you can specify just the table. Otherwise, specify the columns
 using \code{table[columns]} where \code{columns} is a tidy-select specification.}
 }
 \value{
-These functions return closures of class
-\verb{<qf_constraint_specifier>}, which take a qualifyr table and return an
+These functions return a closure of class
+\verb{<qf_constraint_specifier>}, which takes a qualifyr table and returns an
 object inheriting from \verb{<qf_constraint>}. This unfortunate implementation
 detail allows omitting the data set and table when used in the RHS of the
 replace-form function \verb{constraints<-}, making front-end syntax a little
@@ -34,3 +34,16 @@ nicer.
 Functions to specify constraints for qualifyr tables. The
 return values should be stored in a list and passed to \verb{constraints<-}.
 }
+\section{Functions}{
+\itemize{
+\item \code{cstr_unique_key()}: Requires that each row has a unique set of values for the
+key columns.
+
+\item \code{cstr_primary_key()}: Requires that each row has a unique set of values for the
+key columns, and is not missing values in the key columns.
+
+\item \code{cstr_foreign_key()}: Requires that set of values in the key matches a set of
+values in the reference columns. The reference columns must be a unique key
+or a primary key.
+
+}}

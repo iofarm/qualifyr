@@ -1,4 +1,6 @@
-#' @rdname cstr_
+#' @describeIn cstr_ Requires that set of values in the key matches a set of
+#'   values in the reference columns. The reference columns must be a unique key
+#'   or a primary key.
 #' @order 3
 #' @export
 cstr_foreign_key <- function(cols, reference) {
@@ -58,8 +60,8 @@ validate_constraint.cstr_foreign_key <- function(constraint, table) {
 }
 
 #' @noRd
-#' @exportS3Method check_constraint cstr_foreign_key
-check_constraint.cstr_foreign_key <- function(constraint, table) {
+#' @exportS3Method check_constraint_strict cstr_foreign_key
+check_constraint_strict.cstr_foreign_key <- function(constraint, table) {
   key_cols <- table[constraint$cols]
   ref_table_chr <- constraint$ref_table
   ref_table <-
@@ -80,3 +82,16 @@ check_constraint.cstr_foreign_key <- function(constraint, table) {
   result
 }
 
+#' @rdname pick_constraint
+#' @order 3
+#' @export
+foreign_key <- function(table, cols = NULL) {
+  constraint(table, {{ cols }}, "cstr_foreign_key")
+}
+#' @rdname pick_constraint
+#' @order 13
+#' @export
+`foreign_key<-` <- function(table, cols = NULL, value) {
+  constraint(table, {{ cols }}, "cstr_foreign_key") <- value
+  table
+}

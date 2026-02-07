@@ -1,5 +1,7 @@
-#' @rdname cstr_
+#' @describeIn cstr_ Requires that each row has a unique set of values for the
+#'   key columns.
 #' @order 1
+#'
 #' @export
 cstr_unique_key <- function(cols) {
   cols_quo <- rlang::enquo(cols)
@@ -18,8 +20,8 @@ validate_constraint.cstr_unique_key <- function(constraint, table) {
 }
 
 #' @noRd
-#' @exportS3Method check_constraint cstr_unique_key
-check_constraint.cstr_unique_key <- function(constraint, table) {
+#' @exportS3Method check_constraint_strict cstr_unique_key
+check_constraint_strict.cstr_unique_key <- function(constraint, table) {
   key_cols <- table[constraint$cols]
 
   is_duplicated <- duplicated(key_cols) | duplicated(key_cols, fromLast = TRUE)
@@ -29,3 +31,16 @@ check_constraint.cstr_unique_key <- function(constraint, table) {
   result
 }
 
+#' @rdname pick_constraint
+#' @order 1
+#' @export
+unique_key <- function(table, cols = NULL) {
+  constraint(table, {{ cols }}, "cstr_unique_key")
+}
+#' @rdname pick_constraint
+#' @order 11
+#' @export
+`unique_key<-` <- function(table, cols = NULL, value) {
+  constraint(table, {{ cols }}, "cstr_unique_key") <- value
+  table
+}

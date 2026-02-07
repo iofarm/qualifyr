@@ -80,9 +80,9 @@ test_that("constraint checking works", {
 
   result <- check_constraints(dset)
 
-  expect_true(all(result$airlines[[1]]))
-  expect_false(all(result$flights[[1]]))
-  expect_true(all(result$flights[[2]]))
+  expect_true(result$airlines[[1]]$satisfied)
+  expect_false(result$flights[[1]]$satisfied)
+  expect_true(result$flights[[2]]$satisfied)
 
   # Case 2: Primary key on 'airlines' is invalid because of missing key for
   #   Delta Airlines; Foreign key on 'flights' is invalid because it references
@@ -93,8 +93,9 @@ test_that("constraint checking works", {
 
   result2 <- check_constraints(dset2)
 
-  expect_false(all(result2$airlines[[1]]))
-  expect_false(all(result2$flights[[1]]))
-  expect_false(all(result2$flights[[2]]))
+  expect_false(result2$airlines[[1]]$satisfied)
+  expect_false(result2$flights[[1]]$satisfied)
+  expect_false(result2$flights[[2]]$satisfied)
 
 })
+

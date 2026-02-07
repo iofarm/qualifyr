@@ -5,8 +5,8 @@
 ## usethis namespace: end
 NULL
 
-#' @name type-predicates
-#' @rdname type-predicates
+#' @name type_predicates
+#' @rdname type_predicates
 #'
 #' @title Test for qualifyr objects
 #'

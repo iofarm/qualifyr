@@ -33,11 +33,13 @@ qf_dataset <- function(...) {
   new_qf_dataset(tables)
 }
 
-#' @rdname type-predicates
+#' @rdname type_predicates
 #' @export
 is_qf_dataset <- function(x) {
   inherits(x, "qf_dataset")
 }
+
+
 
 # Methods ======================================================================
 
@@ -47,11 +49,24 @@ check_constraints.qf_dataset <- function(x) {
   x |> purrr::map(check_constraints)
 }
 
-# #' @noRd
-# #' @exportS3Method base::as.list qf_dataset
-# as.list.qf_dataset <- function(x, ...) {
-#   unclass(x)
-# }
+#' @noRd
+#' @exportS3Method utils::str qf_dataset
+str.qf_dataset <- function(object, ...) {
+  cat("<qf_dataset>\n")
+  cat("qualifyr data set with ", length(object), " tables: \n", sep = "")
+  purrr::iwalk(unclass(object), \(table, name) {
+    cat(" $ ", name, ": ", sep = "")
+    utils::str(table)
+  })
+  object
+}
+
+# The following methods override the default subsetting and subset assignment
+#   operators to add context information to tables retrieved by subsetting and
+#   strip context information to tables set using complex assignment. The
+#   "context" attribute of a subsetted table contains the <qf_dataset> object it
+#   it was retrieved from, which is needed for resolving and checking foreign
+#   keys that reference other tables in the dataset.
 
 #' @noRd
 #' @exportS3Method base::`$` qf_dataset
@@ -105,15 +120,4 @@ check_constraints.qf_dataset <- function(x) {
     })
   }
   NextMethod()
-}
-
-#' @noRd
-#' @exportS3Method utils::str qf_dataset
-str.qf_dataset <- function(object, ...) {
-  cat("<qf_dataset>\n")
-  cat("qualifyr data set with ", length(object), " tables: \n", sep = "")
-  purrr::iwalk(unclass(object), \(table, name) {
-    cat(" $ ", name, ": ", sep = "")
-    utils::str(table)
-  })
 }

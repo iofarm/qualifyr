@@ -1,5 +1,7 @@
-#' @rdname cstr_
+#' @describeIn cstr_ Requires that each row has a unique set of values for the
+#'   key columns, and is not missing values in the key columns.
 #' @order 2
+#'
 #' @export
 cstr_primary_key <- function(cols) {
   cols_quo <- rlang::enquo(cols)
@@ -18,8 +20,8 @@ validate_constraint.cstr_primary_key <- function(constraint, table) {
 }
 
 #' @noRd
-#' @exportS3Method check_constraint cstr_primary_key
-check_constraint.cstr_primary_key <- function(constraint, table) {
+#' @exportS3Method check_constraint_strict cstr_primary_key
+check_constraint_strict.cstr_primary_key <- function(constraint, table) {
   key_cols <- table[constraint$cols]
 
   is_na <- key_cols |> purrr::map(is.na) |> purrr::reduce(`|`)
@@ -27,4 +29,18 @@ check_constraint.cstr_primary_key <- function(constraint, table) {
   result <- NextMethod() & (!is_na)
   attr(result, "constraint") <- constraint
   result
+}
+
+#' @rdname pick_constraint
+#' @order 2
+#' @export
+primary_key <- function(table, cols = NULL) {
+  constraint(table, {{ cols }}, "cstr_primary_key")
+}
+#' @rdname pick_constraint
+#' @order 12
+#' @export
+`primary_key<-` <- function(table, cols = NULL, value) {
+  constraint(table, {{ cols }}, "cstr_primary_key") <- value
+  table
 }
