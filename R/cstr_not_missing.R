@@ -14,7 +14,7 @@ cstr_not_missing <- function(cols) {
 
 #' @noRd
 #' @export
-validate_constraint.cstr_not_missing <- function(constraint, table) {
+validate_qf_constraint.cstr_not_missing <- function(x, table) {
   NextMethod()
 }
 
@@ -28,15 +28,15 @@ check_constraint_strict.cstr_not_missing <- function(constraint, table) {
 }
 
 #' @rdname pick_constraint
-#' @order 1
+#' @order 4
 #' @export
-unique_key <- function(table, cols = NULL) {
-  constraint(table, {{ cols }}, "cstr_unique_key")
+not_missing <- function(table, cols = NULL) {
+  constraint(table, {{ cols }}, "cstr_not_missing")
 }
 #' @rdname pick_constraint
-#' @order 11
+#' @order 14
 #' @export
-`unique_key<-` <- function(table, cols = NULL, value) {
-  constraint(table, {{ cols }}, "cstr_unique_key") <- value
+`not_missing<-` <- function(table, cols = NULL, value) {
+  constraint(table, {{ cols }}, "cstr_not_missing") <- value
   table
 }

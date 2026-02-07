@@ -10,6 +10,19 @@ new_qf_dataset <- function(x) {
   structure(x, class = c("qf_dataset", "list"))
 }
 
+validate_qf_dataset <- function(x) {
+  purrr::walk(x, \(table)
+    if (!is_qf_table(table)) stop("A <qf_dataset> must only contain ",
+      "<qf_table> objects")
+  )
+  purrr::iwalk(x, \(table, name) tryCatch(
+    validate_qf_table(table),
+    error = \(e) stop("Table ", name, " has invalid structure: \n",
+      e$message)
+  ))
+  x
+}
+
 #' Create a new qualifyr data set from data frames
 #'
 #' @param ... Data frames to be included in the data set. If names are provided,
@@ -30,7 +43,7 @@ qf_dataset <- function(...) {
     nchar(names_explicit) > 0 & !is.na(names_explicit),
     names_explicit, names_implicit
   )
-  new_qf_dataset(tables)
+  validate_qf_dataset(new_qf_dataset(tables))
 }
 
 #' @rdname type_predicates
@@ -114,14 +127,14 @@ NULL
 `$<-.qf_dataset` <- function(x, name, value) {
   value <- as_qf_table(value)
   attr(value, "context") <- NULL
-  NextMethod()
+  validate_qf_dataset(NextMethod())
 }
 #' @rdname subsetting
 #' @export
 `[[<-.qf_dataset` <- function(x, i, value) {
   value <- as_qf_table(value)
   attr(value, "context") <- NULL
-  NextMethod()
+  validate_qf_dataset(NextMethod())
 }
 #' @rdname subsetting
 #' @export
@@ -135,5 +148,5 @@ NULL
       table
     })
   }
-  NextMethod()
+  validate_qf_dataset(NextMethod())
 }

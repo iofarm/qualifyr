@@ -13,6 +13,20 @@ new_qf_table <- function(x, constraints) {
   )
 }
 
+validate_qf_table <- function(x) {
+  if (!is.null(attr(x, "context")) && !is_qf_dataset(attr(x, "context")))
+    stop("Table has invalid 'context' attribute")
+  purrr::walk(constraints(x), \(cstr) tryCatch(
+    validate_qf_constraint(cstr, x),
+    error = \(e) stop(
+      pretty_class(cstr), " (", paste(cstr$cols, sep = ", "), ") ",
+      "has invalid structure: \n",
+      e$message
+    )
+  ))
+  x
+}
+
 #' Convert a data frame to a qualifyr table
 #'
 #' Create a qualifyr table object from a data frame
@@ -97,8 +111,7 @@ constraints <- function(x) {
   if (!rlang::is_list(value)) stop("'value' must be a list, not ",
     typeof(value))
   attr(x, "constraints") <- purrr::modify(value, as_qf_constraint, table = x)
-  purrr::walk(attr(x, "constraints"), validate_constraint, x)
-  x
+  validate_qf_table(x)
 }
 
 #' @name pick_constraint
@@ -166,5 +179,5 @@ constraint <- function(table, cols = NULL, class) {
 `constraint<-` <- function(table, cols = NULL, class, value) {
   idx <- constraint_index(table, {{ cols }}, class)
   constraints(table)[[idx]] <- as_qf_constraint(value, table = table)
-  table
+  validate_qf_table(table)
 }

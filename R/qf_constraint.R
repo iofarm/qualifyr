@@ -7,6 +7,21 @@ new_qf_constraint <- function(x, subclass) {
   structure(x, class = c(subclass, "qf_constraint"))
 }
 
+validate_qf_constraint <- function(x, table) {
+  UseMethod("validate_qf_constraint")
+}
+
+#' @noRd
+#' @export
+validate_qf_constraint.qf_constraint <- function(x, table) {
+  if (!setequal(x$cols, unique(x$cols)))
+    stop(pretty_class(x), " includes duplicate columns")
+  if (!all(x$cols %in% colnames(table)))
+    stop(pretty_class(x), " includes non-existent columns: ",
+      paste(setdiff(x$cols, colnames(table)), collapse = ", "))
+  x
+}
+
 #' @rdname type_predicates
 #' @export
 is_qf_constraint <- function(x) {
@@ -136,32 +151,6 @@ NULL
 
 
 # Generics =====================================================================
-
-#' Validate constraint structure
-#'
-#' Check that a constraint is well-formed. This does not check whether a
-#' constraint is satisfied; for that, use `check_constraint()`
-#'
-#' @param constraint A `<qf_constraint>` object
-#' @param table The table to which the constraint is applied
-#'
-#' @returns `TRUE` if the constraint is valid; throws an error otherwise
-#'
-#' @noRd
-validate_constraint <- function(constraint, table) {
-  UseMethod("validate_constraint")
-}
-
-#' @noRd
-#' @export
-validate_constraint.qf_constraint <- function(constraint, table) {
-  if (!setequal(constraint$cols, unique(constraint$cols)))
-    stop(pretty_class(constraint), " includes duplicate columns")
-  if (!all(constraint$cols %in% colnames(table)))
-    stop(pretty_class(constraint), " includes non-existent columns: ",
-      paste(setdiff(constraints$cols, colnames(table)), collapse = ", "))
-  TRUE
-}
 
 #' Check that a constraint is satisfied
 #'

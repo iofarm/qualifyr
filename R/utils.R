@@ -32,8 +32,13 @@ resolve_table_reference <- function(table, reference) {
   if (reference == ".self") {
     table
   } else {
-    stopifnot(is_qf_dataset(attr(table, "context")))
-    stopifnot(reference %in% names(attr(table, "context")))
+    # even though this is not an exported function, informative error messages
+    # are given here so they do not need to be repeated everywhere that uses it
+    if (!is_qf_dataset(attr(table, "context"))) stop("Reference points to a ",
+      "separate table, but no information on other tables in the dataset was ",
+      "found")
+    if (!(reference %in% names(attr(table, "context")))) stop("Reference ",
+      "points to a non-existent table: ", reference)
     attr(table, "context")[[reference]]
   }
 }

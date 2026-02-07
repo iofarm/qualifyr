@@ -46,17 +46,16 @@ cstr_foreign_key <- function(cols, reference) {
 
 #' @noRd
 #' @export
-validate_constraint.cstr_foreign_key <- function(constraint, table) {
-  NextMethod()
-  ref_table_obj <- resolve_table_reference(table, constraint$ref_table)
-  if (is.null(ref_table_obj))
-    stop(pretty_class(constraint), " references a non-existent table: ",
-      constraint$ref_table_obj)
+validate_qf_constraint.cstr_foreign_key <- function(x, table) {
+  ref_table_obj <- resolve_table_reference(table, x$ref_table)
+  if (is.null(ref_table_obj)) stop(pretty_class(x), " references a ",
+    "non-existent table: ", x$ref_table)
   references_unique_key <- purrr::some(constraints(ref_table_obj), \(cstr)
-    inherits(cstr, "cstr_unique_key") && setequal(constraint$cols, cstr$cols)
+    inherits(cstr, "cstr_unique_key") && setequal(x$cols, cstr$cols)
   )
-  if (!references_unique_key)
-    stop(pretty_class(constraint), " does not reference a unique key")
+  if (!references_unique_key) stop(pretty_class(x), " does not reference a ",
+    "unique key")
+  NextMethod()
 }
 
 #' @noRd
@@ -64,14 +63,7 @@ validate_constraint.cstr_foreign_key <- function(constraint, table) {
 check_constraint_strict.cstr_foreign_key <- function(constraint, table) {
   key_cols <- table[constraint$cols]
   ref_table_chr <- constraint$ref_table
-  ref_table <-
-    if (ref_table_chr == ".self") table
-  else {
-    if (is.null(attr(table, "context"))) stop("Foreign key references a
-        separate table, but no information on other tables in the dataset was
-        found")
-    attr(table, "context")[[ref_table_chr]]
-  }
+  ref_table <- resolve_table_reference(table, ref_table_chr)
   ref_cols <- ref_table[constraint$ref_cols]
 
   result <- 1:ncol(key_cols) |>

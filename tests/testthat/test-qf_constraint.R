@@ -100,3 +100,21 @@ test_that("constraint checking works", {
 
 })
 
+test_that("constraint validators work", {
+  dset <- withr::with_package("nycflights13",
+    qf_dataset(airlines, flights)
+  )
+
+  constraints(dset$airlines) <- list(
+    cstr_not_missing(name)
+  )
+  expect_error(regexp = "includes non-existent columns", {
+    not_missing(dset$airlines)$cols <- "nombre"
+  })
+  expect_error(regexp = "does not reference a unique key", {
+    constraints(dset$flights) <- list(
+      cstr_primary_key(c(year, month, day, carrier, flight)),
+      cstr_foreign_key(carrier, airlines)
+    )
+  })
+})
