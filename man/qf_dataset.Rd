@@ -12,8 +12,8 @@ they will be used as the table names; otherwise, the deparsed expressions
 will be used, which may or may not be a sensible default.}
 }
 \value{
-A new <qf_dataset> object containing the tables provided in \code{...}
-(after being converted to <qf_table> objects by \code{as_qf_table()}).
+A new \verb{<qf_dataset>} object containing the tables provided in \code{...}
+(after being converted to \verb{<qf_table>} objects by \code{as_qf_table()}).
 }
 \description{
 Create a new qualifyr data set from data frames

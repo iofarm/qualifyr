@@ -1,7 +1,6 @@
 #' @describeIn cstr_ Requires that each row has a unique set of values for the
 #'   key columns, and is not missing values in the key columns.
 #' @order 2
-#'
 #' @export
 cstr_primary_key <- function(cols) {
   cols_quo <- rlang::enquo(cols)
@@ -14,13 +13,13 @@ cstr_primary_key <- function(cols) {
 }
 
 #' @noRd
-#' @exportS3Method validate_constraint cstr_primary_key
+#' @export
 validate_constraint.cstr_primary_key <- function(constraint, table) {
   NextMethod()
 }
 
 #' @noRd
-#' @exportS3Method check_constraint_strict cstr_primary_key
+#' @export
 check_constraint_strict.cstr_primary_key <- function(constraint, table) {
   key_cols <- table[constraint$cols]
 

@@ -7,10 +7,10 @@
 except_where(...)
 }
 \arguments{
-\item{...}{\verb{<data-masking>} Conditions under which to except a row. Each
-condition, when using the table as a data mask, should evaluate to a
-logical vector with length equal to the number of rows of the table. Rows
-for which all conditions are \code{TRUE} will be excepted.}
+\item{...}{<\code{\link[rlang:args_data_masking]{data-masking}}> Conditions under
+which to except a row. Each condition, when using the table as a data mask,
+should evaluate to a logical vector with length equal to the number of rows
+of the table. Rows for which all conditions are \code{TRUE} will be excepted.}
 }
 \value{
 A \verb{<qf_exception>} object

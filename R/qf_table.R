@@ -45,13 +45,13 @@ is_qf_table <- function(x) {
 # Methods ======================================================================
 
 #' @rdname check_constraints
-#' @exportS3Method check_constraints qf_table
+#' @export
 check_constraints.qf_table <- function(x) {
   constraints(x) |> purrr::map(check_constraint, x)
 }
 
 #' @noRd
-#' @exportS3Method utils::str qf_table
+#' @exportS3Method utils::str
 str.qf_table <- function(object, ...) {
   cat("<qf_table> [", nrow(object), " x ", ncol(object), "]\n", sep = "")
   cat("    Columns: ", paste(colnames(object), collapse = ", "), "\n", sep = "")
@@ -83,6 +83,8 @@ str.qf_table <- function(object, ...) {
 #'   will signal an error. Tables returned by subsetting a qualifyr dataset
 #'   using `$`, `[[`, or `[` have this attribute set.
 #'
+#' @seealso [pick_constraint]
+#'
 #' @rdname constraints
 #' @export
 constraints <- function(x) {
@@ -109,9 +111,10 @@ constraints <- function(x) {
 #'   table for the purpose of inspecting, modifying, or replacing it.
 #'
 #' @param table The table to search for the constraint
-#' @param cols <tidy-select> The columns the constraint applies to. If `cols` is
-#'   `NULL` or otherwise identifies zero columns, returns the constraint with
-#'   the specified type if there is exactly one, and throws an error otherwise.
+#' @param cols <[`tidy-select`][args_tidy_select]> The columns the constraint
+#'   applies to. If `cols` is `NULL` or otherwise identifies zero columns,
+#'   returns the constraint with the specified type if there is exactly one, and
+#'   throws an error otherwise.
 #' @param value The constraint object to replace the specified constraint with
 #'
 #' @returns For the selection forms, the constraint object. For the replacement

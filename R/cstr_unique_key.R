@@ -1,7 +1,6 @@
 #' @describeIn cstr_ Requires that each row has a unique set of values for the
 #'   key columns.
 #' @order 1
-#'
 #' @export
 cstr_unique_key <- function(cols) {
   cols_quo <- rlang::enquo(cols)
@@ -14,13 +13,13 @@ cstr_unique_key <- function(cols) {
 }
 
 #' @noRd
-#' @exportS3Method validate_constraint cstr_unique_key
+#' @export
 validate_constraint.cstr_unique_key <- function(constraint, table) {
   NextMethod()
 }
 
 #' @noRd
-#' @exportS3Method check_constraint_strict cstr_unique_key
+#' @export
 check_constraint_strict.cstr_unique_key <- function(constraint, table) {
   key_cols <- table[constraint$cols]
 

@@ -29,3 +29,6 @@ table, \code{x} must have the \code{context} attribute set, otherwise \verb{cons
 will signal an error. Tables returned by subsetting a qualifyr dataset
 using \code{$}, \code{[[}, or \code{[} have this attribute set.
 }
+\seealso{
+\link{pick_constraint}
+}

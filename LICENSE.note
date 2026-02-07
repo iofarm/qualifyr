@@ -1,0 +1,4 @@
+The qualifyr package includes documentation adapted from the `args_tidy_select`
+help topic from the tidyselect package, which is distributed under the MIT
+license. See LICENSE-tidyselect.md for the full copyright notice and license
+information.

@@ -30,9 +30,10 @@ foreign_key(table, cols = NULL) <- value
 \arguments{
 \item{table}{The table to search for the constraint}
 
-\item{cols}{\if{html}{\out{<tidy-select>}} The columns the constraint applies to. If \code{cols} is
-\code{NULL} or otherwise identifies zero columns, returns the constraint with
-the specified type if there is exactly one, and throws an error otherwise.}
+\item{cols}{<\code{\link[=args_tidy_select]{tidy-select}}> The columns the constraint
+applies to. If \code{cols} is \code{NULL} or otherwise identifies zero columns,
+returns the constraint with the specified type if there is exactly one, and
+throws an error otherwise.}
 
 \item{value}{The constraint object to replace the specified constraint with}
 }

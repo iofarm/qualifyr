@@ -1,15 +1,22 @@
 Package: qualifyr
 Type: Package
-Title: Check Constraints on Relational Data Structures
+Title: Validate Relational Data Structures
 Version: 0.0.0.9000
 Authors@R: c(
     person(
       "Ian", "Farm",
       email = "ian.farm@maine.edu",
       role = c("aut", "cre")
+    ),
+    person(
+      "tidyselect authors",
+      role = "cph",
+      comment = "Documentation for arguments using tidy-selection is adapted 
+          from the `args_tidy_select` help topic from the tidyselect package."
     )
   )
-Description: Lorem ipsum dolor sit amet.
+Description: A framework for representing relational data structures in R, and 
+    flexible tools for defining and validating constraints on relational data.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

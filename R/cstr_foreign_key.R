@@ -45,7 +45,7 @@ cstr_foreign_key <- function(cols, reference) {
 }
 
 #' @noRd
-#' @exportS3Method validate_constraint cstr_foreign_key
+#' @export
 validate_constraint.cstr_foreign_key <- function(constraint, table) {
   NextMethod()
   ref_table_obj <- resolve_table_reference(table, constraint$ref_table)
@@ -60,7 +60,7 @@ validate_constraint.cstr_foreign_key <- function(constraint, table) {
 }
 
 #' @noRd
-#' @exportS3Method check_constraint_strict cstr_foreign_key
+#' @export
 check_constraint_strict.cstr_foreign_key <- function(constraint, table) {
   key_cols <- table[constraint$cols]
   ref_table_chr <- constraint$ref_table

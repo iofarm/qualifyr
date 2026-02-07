@@ -18,13 +18,13 @@ as_qf_constraint <- function(x, ...) {
 }
 
 #' @noRd
-#' @exportS3Method as_qf_constraint qf_constraint
+#' @export
 as_qf_constraint.qf_constraint <- function(x, ...) {
   x
 }
 
 #' @noRd
-#' @exportS3Method as_qf_constraint qf_constraint_specifier
+#' @export
 as_qf_constraint.qf_constraint_specifier <- function(x, table, ...) {
   (x)(table)
 }
@@ -69,9 +69,9 @@ new_constraint_specifier <- function(code) {
 #' @param expr A defused expression specifying a table and columns according to
 #'   the tidyselect extension described in 'details'
 #'
-#' @returns A list with two elements, each a tidyselect expression: `$table`, the
-#'   expression specifying the table, and `$cols`, the expression specifying the
-#'   columns.
+#' @returns A list with two elements, each a tidyselect expression: `$table`,
+#'   the expression specifying the table, and `$cols`, the expression specifying
+#'   the columns.
 #'
 #' @details To select columns from a specific table, use either:
 #'
@@ -80,8 +80,8 @@ new_constraint_specifier <- function(code) {
 #'   * `table[column1, column2, ...]` where `table` specifies the table and
 #'   `column1, column2, ...` specify columns from `table`
 #'
-#' If `expr` is not a call to `$` or `[`, then it will be returned as `$table`
-#' while `$col` is `NULL`.
+#'   If `expr` is not a call to `$` or `[`, then it will be returned as `$table`
+#'   while `$col` is `NULL`.
 #'
 #' @noRd
 parse_reference_specifier <- function(expr) {
@@ -104,27 +104,33 @@ parse_reference_specifier <- function(expr) {
 # declare data pronouns to avoid R CMD CHECK notes
 utils::globalVariables(c(".table"))
 
+# Documentation topic for cstr_*() functions:
+
+#' Constraints for relational data structures
+#'
+#' Functions to specify constraints for qualifyr tables. The return values
+#' should be stored in a list and passed to `constraints<-`.
+#'
+#' @param cols <[`tidy-select`][args_tidy_select]> The columns to set
+#'   constraints on
+#' @param reference <[`tidy-select`][args_tidy_select]> For
+#'   `cstr_foreign_key()`, the table and columns to reference. If the key
+#'   columns and reference columns have the same names, you can specify just the
+#'   table. Otherwise, specify the columns using `table$columns` or
+#'   `table[columns]` where `table` and `column`/`columns` are each a
+#'   tidy-select specification. The special value `.self` (as a bare symbol)
+#'   refers to the current table.
+#'
+#' @returns A `<qf_constraint_specifier>` object.
+#'
+#' @details The return value, a `<qf_constraint_specifier>` object, is
+#'   technically a closure which takes a qualifyr table and returns a
+#'   `<qf_constraint>` object. This is a somewhat unfortunate implementation
+#'   detail, but it allows using `cstr_*()` functions in the RHS of ``
+#'   `constraints<-`() `` without needing to include the table as an argument,
+#'   making front-end syntex a little clearer.
+#'
 #' @name cstr_
-#' @rdname cstr_
-#' @order 0
-#'
-#' @title Constraints for relational data structures
-#'
-#' @description Functions to specify constraints for qualifyr tables. The
-#'   return values should be stored in a list and passed to `constraints<-`.
-#'
-#' @param cols <`tidy-select`> The columns to set constraints on
-#' @param reference <`tidy-select`> For `cstr_foreign_key()`, the table and
-#'   columns to reference. If the key columns and reference columns have the
-#'   same names, you can specify just the table. Otherwise, specify the columns
-#'   using `table[columns]` where `columns` is a tidy-select specification.
-#'
-#' @returns These functions return a closure of class
-#'   `<qf_constraint_specifier>`, which takes a qualifyr table and returns an
-#'   object inheriting from `<qf_constraint>`. This unfortunate implementation
-#'   detail allows omitting the data set and table when used in the RHS of the
-#'   replace-form function `constraints<-`, making front-end syntax a little
-#'   nicer.
 NULL
 
 
@@ -147,7 +153,7 @@ validate_constraint <- function(constraint, table) {
 }
 
 #' @noRd
-#' @exportS3Method validate_constraint qf_constraint
+#' @export
 validate_constraint.qf_constraint <- function(constraint, table) {
   if (!setequal(constraint$cols, unique(constraint$cols)))
     stop(pretty_class(constraint), " includes duplicate columns")

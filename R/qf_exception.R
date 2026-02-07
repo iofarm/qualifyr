@@ -18,10 +18,10 @@ is_qf_exception <- function(x) {
 
 #' Define a constraint exception
 #'
-#' @param ... `<data-masking>` Conditions under which to except a row. Each
-#'   condition, when using the table as a data mask, should evaluate to a
-#'   logical vector with length equal to the number of rows of the table. Rows
-#'   for which all conditions are `TRUE` will be excepted.
+#' @param ... <[`data-masking`][rlang::args_data_masking]> Conditions under
+#'   which to except a row. Each condition, when using the table as a data mask,
+#'   should evaluate to a logical vector with length equal to the number of rows
+#'   of the table. Rows for which all conditions are `TRUE` will be excepted.
 #'
 #' @returns A `<qf_exception>` object
 #'

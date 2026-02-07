@@ -1,7 +1,6 @@
 #' @describeIn cstr_ Requires that the specified columns do not contain missing
 #'   values.
 #' @order 4
-#'
 #' @export
 cstr_not_missing <- function(cols) {
   cols_quo <- rlang::enquo(cols)
@@ -14,13 +13,13 @@ cstr_not_missing <- function(cols) {
 }
 
 #' @noRd
-#' @exportS3Method validate_constraint cstr_not_missing
+#' @export
 validate_constraint.cstr_not_missing <- function(constraint, table) {
   NextMethod()
 }
 
 #' @noRd
-#' @exportS3Method check_constraint_strict cstr_not_missing
+#' @export
 check_constraint_strict.cstr_not_missing <- function(constraint, table) {
   key_cols <- table[constraint$cols]
   result <- !apply(key_cols, 1, anyNA)

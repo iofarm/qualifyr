@@ -5,8 +5,8 @@ new_qf_dataset <- function(x) {
   stopifnot(purrr::every(x, is_qf_table))
   stopifnot(all(nchar(names(x)) > 0))
 
-  # inherits from "list" so that purrr functions treat <qf_dataset> objects
-  #   as vectors rather than scalars. See ?vctrs::`vector-checks` for details.
+  # inherits from "list" so that purrr functions treat <qf_dataset> objects as
+  # vectors rather than scalars. See ?vctrs::`vector-checks` for details.
   structure(x, class = c("qf_dataset", "list"))
 }
 
@@ -16,8 +16,8 @@ new_qf_dataset <- function(x) {
 #'   they will be used as the table names; otherwise, the deparsed expressions
 #'   will be used, which may or may not be a sensible default.
 #'
-#' @returns A new <qf_dataset> object containing the tables provided in `...`
-#'   (after being converted to <qf_table> objects by `as_qf_table()`).
+#' @returns A new `<qf_dataset>` object containing the tables provided in `...`
+#'   (after being converted to `<qf_table>` objects by `as_qf_table()`).
 #'
 #' @export
 qf_dataset <- function(...) {
@@ -44,13 +44,13 @@ is_qf_dataset <- function(x) {
 # Methods ======================================================================
 
 #' @rdname check_constraints
-#' @exportS3Method check_constraints qf_dataset
+#' @export
 check_constraints.qf_dataset <- function(x) {
   x |> purrr::map(check_constraints)
 }
 
 #' @noRd
-#' @exportS3Method utils::str qf_dataset
+#' @exportS3Method utils::str
 str.qf_dataset <- function(object, ...) {
   cat("<qf_dataset>\n")
   cat("qualifyr data set with ", length(object), " tables: \n", sep = "")
@@ -61,29 +61,47 @@ str.qf_dataset <- function(object, ...) {
   object
 }
 
-# The following methods override the default subsetting and subset assignment
-#   operators to add context information to tables retrieved by subsetting and
-#   strip context information to tables set using complex assignment. The
-#   "context" attribute of a subsetted table contains the <qf_dataset> object it
-#   it was retrieved from, which is needed for resolving and checking foreign
-#   keys that reference other tables in the dataset.
+#' Subsetting qualifyr data sets
+#'
+#' Accessing tables from qualifyr data sets works like subsetting bare lists,
+#' except that certain context information is attached to the returned tables.
+#' This is necessary for resolving and checking foreign keys that reference
+#' other tables in the dataset.
+#'
+#' @param x A qualifyr data set
+#' @param i Indices specifying tables - numeric for positional subsetting, or
+#'   character for subsetting by name; must be length one for `[[` and `[[<-`
+#' @param name The name of a table to subset, either as a character literal or
+#'   raw symbol
+#' @param value A qualifyr table to replace the subsetted table(s) with;
+#'   or, for `[<-`, possibly a list of qualifyr tables or a qualifyr dataset
+#'
+#' @returns For `$` and `[[`, a qualifyr table. For `[`, a list of qualifyr
+#'   tables. For `$<-`, `[[<-`, and `[<-`, a modified version of `x`.
+#'
+#' @details
+#' Subsetted tables have `x` as their `context` attribute. The subset assignment
+#' methods strip the `context` attribute from `value`.
+#'
+#' @name subsetting
+NULL
 
-#' @noRd
-#' @exportS3Method base::`$` qf_dataset
+#' @rdname subsetting
+#' @export
 `$.qf_dataset` <- function(x, name) {
   y <- NextMethod()
   if (!is.null(y)) attr(y, "context") <- x
   y
 }
-#' @noRd
-#' @exportS3Method base::`[[` qf_dataset
+#' @rdname subsetting
+#' @export
 `[[.qf_dataset` <- function(x, i) {
   y <- NextMethod()
   if (!is.null(y)) attr(y, "context") <- x
   y
 }
-#' @noRd
-#' @exportS3Method base::`[` qf_dataset
+#' @rdname subsetting
+#' @export
 `[.qf_dataset` <- function(x, i) {
   y <- NextMethod()
   purrr::modify(y, \(table) {
@@ -91,24 +109,22 @@ str.qf_dataset <- function(object, ...) {
     table
   })
 }
-#' @noRd
-#' @exportS3Method base::`$<-` qf_dataset
+#' @rdname subsetting
+#' @export
 `$<-.qf_dataset` <- function(x, name, value) {
   value <- as_qf_table(value)
   attr(value, "context") <- NULL
   NextMethod()
 }
-
-#' @noRd
-#' @exportS3Method base::`[[<-` qf_dataset
+#' @rdname subsetting
+#' @export
 `[[<-.qf_dataset` <- function(x, i, value) {
   value <- as_qf_table(value)
   attr(value, "context") <- NULL
   NextMethod()
 }
-
-#' @noRd
-#' @exportS3Method base::`[<-` qf_dataset
+#' @rdname subsetting
+#' @export
 `[<-.qf_dataset` <- function(x, i, value) {
   if (is_qf_table(value)) {
     attr(value, "context") <- NULL

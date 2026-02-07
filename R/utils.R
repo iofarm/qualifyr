@@ -49,6 +49,7 @@ resolve_table_reference <- function(table, reference) {
 #'
 #' @noRd
 pretty_class <- function(object) {
+  if (any(grepl("cnst", class(object)))) browser()
   paste0("<", class(object)[[1]], ">")
 }
 

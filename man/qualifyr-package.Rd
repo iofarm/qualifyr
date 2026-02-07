@@ -4,12 +4,17 @@
 \name{qualifyr-package}
 \alias{qualifyr}
 \alias{qualifyr-package}
-\title{qualifyr: Check Constraints on Relational Data Structures}
+\title{qualifyr: Validate Relational Data Structures}
 \description{
-Lorem ipsum dolor sit amet.
+A framework for representing relational data structures in R, and flexible tools for defining and validating constraints on relational data.
 }
 \author{
 \strong{Maintainer}: Ian Farm \email{ian.farm@maine.edu}
+
+Other contributors:
+\itemize{
+  \item tidyselect authors (Documentation for arguments using tidy-selection is adapted from the `args_tidy_select` help topic from the tidyselect package.) [copyright holder]
+}
 
 }
 \keyword{internal}
