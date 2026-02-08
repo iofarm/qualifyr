@@ -64,14 +64,26 @@ check_constraints.qf_dataset <- function(x) {
 
 #' @noRd
 #' @exportS3Method utils::str
-str.qf_dataset <- function(object, ...) {
-  cat("<qf_dataset>\n")
-  cat("qualifyr data set with ", length(object), " tables: \n", sep = "")
-  purrr::iwalk(unclass(object), \(table, name) {
+str.qf_dataset <- function(object,
+  nest.lev = 0,
+  indent.str = paste(rep.int(" ", max(0, nest.lev + 1)), collapse = ".."),
+  ...
+) {
+  cat("<qf_dataset> with ", length(object), " tables: \n", sep = "")
+
+  table_names <- format(names(object))
+  purrr::walk2(object, table_names, \(table, name) {
     cat(" $ ", name, ": ", sep = "")
-    utils::str(table)
+    utils::str(table, nest.lev = nest.lev + 1, show.context = FALSE, ...)
   })
-  object
+
+  invisible(object)
+}
+
+#' @noRd
+#' @export
+print.qf_dataset <- function(x, ...) {
+  str(x)
 }
 
 #' Subsetting qualifyr data sets

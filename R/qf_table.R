@@ -66,16 +66,60 @@ check_constraints.qf_table <- function(x) {
 
 #' @noRd
 #' @exportS3Method utils::str
-str.qf_table <- function(object, ...) {
-  cat("<qf_table> [", nrow(object), " x ", ncol(object), "]\n", sep = "")
-  cat("    Columns: ", paste(colnames(object), collapse = ", "), "\n", sep = "")
-  cat(
-    "    Constraints: ",
-    paste(purrr::map(constraints(object),
-      \(cstr) paste("<", class(cstr)[[1]], ">", sep = "")
-    ), collapse = ", "),
-    "\n", sep = ""
+str.qf_table <- function(object,
+  show.context = TRUE,
+  nest.lev = 0,
+  indent.str = paste(rep.int(" ", max(0, nest.lev + 1)), collapse = ".."),
+  ...
+) {
+  dots <- list(...)
+  context <- attr(object, "context")
+  attr(object, "context") <- NULL
+
+  # Header
+  cat("<qf_table>\n")
+
+  # Columns / data
+  cat(indent.str, "- Data:", sep = "")
+  NextMethod(
+    nest.lev = nest.lev + 1,
+    indent.str = paste(rep.int(" ", max(0, nest.lev + 2)),
+      collapse = ".."),
+    give.attr = FALSE
   )
+
+  # Constraints
+  cat(indent.str, "- Constraints:", "\n", sep = "")
+  constraint_types <- constraints(object) |>
+    vapply(pretty_class, character(1)) |>
+    format()
+  constraint_cols <- constraints(object) |>
+    vapply(\(cstr) {
+      col_names <- paste0("[", paste(cstr$cols, collapse = ", "), "]")
+      if (inherits(cstr, "cstr_foreign_key")) {
+        ref_col_names <- paste(cstr$ref_cols, collapse = ", ")
+        paste0(col_names, " => ", cstr$ref_table, "[", ref_col_names, "]")
+      } else {
+        col_names
+      }
+    }, character(1))
+  paste0(indent.str, "..", " - ", constraint_types, " ", constraint_cols) |>
+    cat(sep = "\n")
+
+  # Context
+  if (show.context && !is.null(context)) {
+    cat(indent.str, "- Context: ", pretty_class(context), ": ", sep = "")
+    cat(names(context), sep = ", ")
+    cat("\n")
+  }
+
+  invisible(object)
+}
+
+#' @noRd
+#' @export
+print.qf_table <- function(x, ...) {
+  str(x)
 }
 
 
