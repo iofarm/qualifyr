@@ -51,7 +51,7 @@ validate_qf_constraint.cstr_foreign_key <- function(x, table) {
   if (is.null(ref_table_obj)) stop(pretty_class(x), " references a ",
     "non-existent table: ", x$ref_table)
   references_unique_key <- purrr::some(constraints(ref_table_obj), \(cstr)
-    inherits(cstr, "cstr_unique_key") && setequal(x$cols, cstr$cols)
+    inherits(cstr, "cstr_unique_key") && setequal(x$ref_cols, cstr$cols)
   )
   if (!references_unique_key) stop(pretty_class(x), " does not reference a ",
     "unique key")

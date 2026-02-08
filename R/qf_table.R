@@ -147,7 +147,7 @@ constraint_index <- function(table, cols = NULL, class) {
   matching_class <- purrr::map_lgl(constraints(table), \(cstr)
     class(cstr)[[1]] == class
   )
-  query_cols <- select_names({{ cols }}, table)
+  query_cols <- select_names(rlang::enquo(cols), table)
   matching_cols <-
     if (length(query_cols) == 0) {
       rep(TRUE, length(constraints(table)))
