@@ -1,8 +1,5 @@
 test_that("setting constraints works", {
-  dset <- qf_dataset(
-    flights = nycflights13::flights,
-    planes = nycflights13::planes
-  )
+  dset <- example_dataset(constrained = FALSE)
 
   constraints(dset$planes) <- list(
     cstr_primary_key(tailnum)
@@ -34,14 +31,48 @@ test_that("setting constraints works", {
       )
     )
   )
+
+  # Foreign key referencing own table:
+  enneagram <- as_qf_table(data.frame(
+    number         = c(1, 2, 3, 4, 5, 6, 7, 8, 9),
+    disintegration = c(4, 8, 9, 2, 7, 3, 1, 5, 6),
+    integration    = c(7, 4, 6, 1, 8, 9, 5, 2, 3)
+  ))
+  constraints(enneagram) <- list(
+    cstr_primary_key(number),
+    cstr_foreign_key(disintegration, .self$number),
+    cstr_foreign_key(integration, .self$number)
+  )
+  expect_identical(
+    constraints(enneagram),
+    list(
+      structure(
+        list(cols = "number"),
+        class = c("cstr_primary_key", "cstr_unique_key", "qf_constraint")
+      ),
+      structure(
+        list(cols = "disintegration", ref_table = ".self", ref_cols = "number"),
+        class = c("cstr_foreign_key", "qf_constraint")
+      ),
+      structure(
+        list(cols = "integration", ref_table = ".self", ref_cols = "number"),
+        class = c("cstr_foreign_key", "qf_constraint")
+      )
+    )
+  )
+  expect_error(regex = "no information on other tables in the dataset",  {
+    constraints(enneagram) <- list(
+      cstr_primary_key(number),
+      cstr_foreign_key(disintegration, .self$number),
+      cstr_foreign_key(integration, .self$number),
+      cstr_foreign_key(integration, some_other_table)
+    )
+  })
+
 })
 
 test_that("alternative reference specification formats are equivalent", {
-
-  dset <- qf_dataset(
-    flights = nycflights13::flights,
-    planes = nycflights13::planes
-  )
+  dset <- example_dataset(constrained = FALSE)
   constraints(dset$planes) <- list(cstr_primary_key(tailnum))
 
   dset1 <- dset
@@ -58,27 +89,13 @@ test_that("alternative reference specification formats are equivalent", {
   )
   expect_identical(constraints(dset1$flights), constraints(dset2$flights))
   expect_identical(constraints(dset2$flights), constraints(dset3$flights))
-
 })
 
 test_that("constraint checking works", {
-
-  dset <- withr::with_package("nycflights13",
-    qf_dataset(airlines, flights)
-  )
-
-  constraints(dset$airlines) <- list(
-    cstr_primary_key(carrier),
-    cstr_not_missing(name)
-  )
-  constraints(dset$flights) <- list(
-    cstr_primary_key(c(year, month, day, carrier, flight)),
-    cstr_foreign_key(carrier, airlines)
-  )
+  dset <- example_dataset()
 
   # Case 1: Primary key on 'flights' is invalid because of duplicate keys;
   #   otherwise OK
-
   result <- check_constraints(dset)
   expect_true(result$airlines[[1]]$satisfied)
   expect_true(result$airlines[[2]]$satisfied)
@@ -88,22 +105,33 @@ test_that("constraint checking works", {
   # Case 2: Primary key and not-missing constraint on 'airlines' is invalid
   #   because of missing values for Delta Airlines; Foreign key on 'flights' is
   #   invalid because it references this primary key.
-
   dset2 <- dset
   dset2$airlines[dset$airlines$carrier == "DL", ] <- NA
-
   result2 <- check_constraints(dset2)
   expect_false(result2$airlines[[1]]$satisfied)
   expect_false(result2$airlines[[2]]$satisfied)
   expect_false(result2$flights[[1]]$satisfied)
   expect_false(result2$flights[[2]]$satisfied)
 
+  # Foreign key referencing own table:
+  enneagram <- as_qf_table(data.frame(
+    number         = c(1, 2, 3, 4, 5, 6, 7, 8, 9),
+    disintegration = c(4, 8, 9, 2, 7, 3, 1, 5, 6),
+    integration    = c(7, 4, 6, 1, 8, 9, 5, 2, 3)
+  ))
+  constraints(enneagram) <- list(
+    cstr_primary_key(number),
+    cstr_foreign_key(disintegration, .self$number),
+    cstr_foreign_key(integration, .self$number)
+  )
+  result9 <- check_constraints(enneagram)
+  expect_true(result9[[2]]$satisfied)
+  expect_true(result9[[3]]$satisfied)
+
 })
 
 test_that("constraint validators work", {
-  dset <- withr::with_package("nycflights13",
-    qf_dataset(airlines, flights)
-  )
+  dset <- example_dataset(constrained = FALSE)
 
   constraints(dset$airlines) <- list(
     cstr_not_missing(name)

@@ -4,3 +4,8 @@ test_that("table name inference works", {
   )
   expect_equal(names(dset), c("carriers", "airports"))
 })
+
+test_that("print() output is correct", {
+  dset <- example_dataset()
+  expect_snapshot_output(print(dset))
+})

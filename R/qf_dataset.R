@@ -12,13 +12,15 @@ new_qf_dataset <- function(x) {
 
 validate_qf_dataset <- function(x) {
   purrr::walk(x, \(table)
-    if (!is_qf_table(table)) stop("A <qf_dataset> must only contain ",
-      "<qf_table> objects")
+    if (!is_qf_table(table))
+      stop("A <qf_dataset> must only contain <qf_table> objects")
   )
   purrr::iwalk(x, \(table, name) tryCatch(
     validate_qf_table(table),
-    error = \(e) stop("Table ", name, " has invalid structure: \n",
-      e$message)
+    error = \(e) stop(
+      "Table ", name, " has invalid structure: \n",
+      e$message
+    )
   ))
   x
 }

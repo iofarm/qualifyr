@@ -34,11 +34,11 @@ resolve_table_reference <- function(table, reference) {
   } else {
     # even though this is not an exported function, informative error messages
     # are given here so they do not need to be repeated everywhere that uses it
-    if (!is_qf_dataset(attr(table, "context"))) stop("Reference points to a ",
-      "separate table, but no information on other tables in the dataset was ",
-      "found")
-    if (!(reference %in% names(attr(table, "context")))) stop("Reference ",
-      "points to a non-existent table: ", reference)
+    if (!is_qf_dataset(attr(table, "context")))
+      stop("Reference points to a separate table, but no information on other ",
+        "tables in the dataset was found")
+    if (!(reference %in% names(attr(table, "context"))))
+      stop("Reference points to a non-existent table (", reference, ")")
     attr(table, "context")[[reference]]
   }
 }
@@ -54,7 +54,6 @@ resolve_table_reference <- function(table, reference) {
 #'
 #' @noRd
 pretty_class <- function(object) {
-  if (any(grepl("cnst", class(object)))) browser()
   paste0("<", class(object)[[1]], ">")
 }
 

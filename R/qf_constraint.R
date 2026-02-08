@@ -205,8 +205,8 @@ check_constraint_strict <- function(constraint, table) {
 #'
 #' @export
 exceptions <- function(x) {
-  if (!is_qf_constraint(x)) stop("'x' must be a <qf_constraint>, not ",
-    typeof(x))
+  if (!is_qf_constraint(x))
+    stop("'x' must be a <qf_constraint>, not ", typeof(x))
 
   attr(x, "exceptions")
 }
@@ -214,8 +214,8 @@ exceptions <- function(x) {
 #' @rdname exceptions
 #' @export
 `exceptions<-` <- function(x, value) {
-  if (!is_qf_constraint(x)) stop("'x' must be a <qf_constraint>, not ",
-    typeof(x))
+  if (!is_qf_constraint(x))
+    stop("'x' must be a <qf_constraint>, not ", typeof(x))
   exception_list <-
   if (is_qf_exception(value))
     list(value)

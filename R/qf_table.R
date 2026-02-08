@@ -151,9 +151,10 @@ constraints <- function(x) {
 #' @rdname constraints
 #' @export
 `constraints<-` <- function(x, value) {
-  if (!is_qf_table(x)) stop("'x' must be a qualifyr table, not ", typeof(x))
-  if (!rlang::is_list(value)) stop("'value' must be a list, not ",
-    typeof(value))
+  if (!is_qf_table(x))
+    stop("'x' must be a qualifyr table, not ", typeof(x))
+  if (!rlang::is_list(value))
+    stop("'value' must be a list, not ", typeof(value))
   attr(x, "constraints") <- purrr::modify(value, as_qf_constraint, table = x)
   validate_qf_table(x)
 }
@@ -201,10 +202,10 @@ constraint_index <- function(table, cols = NULL, class) {
       )
     }
   matches <- which(matching_class & matching_cols)
-  if (length(matches) == 0) stop(deparse(sys.call(-1)), " does not match any
-    constraints")
-  else if (length(matches) > 1) stop(deparse(sys.call(-1)), " is ambiguous,
-    i.e., matches multiple constraints")
+  if (length(matches) == 0)
+    stop(deparse(sys.call(-1)), " does not match any constraints")
+  else if (length(matches) > 1)
+    stop(deparse(sys.call(-1)), " is ambiguous (matches multiple constraints)")
   else matches
 }
 

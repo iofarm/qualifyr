@@ -46,9 +46,9 @@ except_where <- function(...) {
 excepted_rows <- function(exception, table) {
   conditions <- purrr::map(exception, rlang::eval_tidy, data = table)
   purrr::walk(conditions, \(cond)
-    if (!rlang::is_logical(cond, n = nrow(table))) stop("Each condition must ",
-      "evaluate to a logical vector of length ", nrow(table), ", not a ",
-      typeof(cond), " of length ", length(cond))
+    if (!rlang::is_logical(cond, n = nrow(table)))
+      stop("Each condition must evaluate to a logical vector of length ",
+        nrow(table), ", not a ", typeof(cond), " of length ", length(cond))
   )
   purrr::reduce(conditions, `&`)
 }
