@@ -29,16 +29,23 @@ library(qualifyr)
 # install.packages("nycflights13")
 library(nycflights13)
 
-dset <- qf_dataset(airlines, flights)
+nycflights <- qf_dataset(airlines, planes, flights)
 
-constraints(dset$airlines) <- list(
-  cstr_primary_key(carrier),
+constraints(nycflights$airlines) <-
+  cstr_primary_key(carrier) &
   cstr_not_missing(name)
-)
-constraints(dset$flights) <- list(
-  cstr_primary_key(c(year, month, day, carrier, flight)),
-  cstr_foreign_key(carrier, airlines)
-)
+constraints(nycflights$planes) <-
+  cstr_primary_key(tailnum)
+constraints(nycflights$flights) <- 
+  cstr_primary_key(c(year, month, day, carrier, flight)) &
+  cstr_foreign_key(carrier, airlines) &
+  cstr_foreign_key(tailnum, planes)
 
-results <- check_constraints(dset)
+check_constraints(nycflights)
+#> Constraint check report: 4 satisfied / 0 excepted / 2 violated: 
+#> => In table 'flights':
+#>    [[1]] <cstr_primary_key> [year, month, day, carrier, flight]
+#>       Violating rows: 228756, 229231, 235372, 235857, 242047... (43 more)
+#>    [[3]] <cstr_foreign_key> [tailnum] => planes[tailnum]
+#>       Violating rows: 10, 15, 19, 22, 26-27, 32, 35, 37, 39, 41... (52595 more)
 ```
