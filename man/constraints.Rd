@@ -30,5 +30,5 @@ will signal an error. Tables returned by subsetting a qualifyr dataset
 using \code{$}, \code{[[}, or \code{[} have this attribute set.
 }
 \seealso{
-\link{pick_constraint}
+\link{get_constraint}
 }

@@ -30,16 +30,16 @@ check_constraint_strict.cstr_unique_key <- function(constraint, table) {
   result
 }
 
-#' @rdname pick_constraint
+#' @rdname get_constraint
 #' @order 1
 #' @export
-unique_key <- function(table, cols = NULL) {
+get_unique_key <- function(table, cols = NULL) {
   constraint(table, {{ cols }}, "cstr_unique_key")
 }
-#' @rdname pick_constraint
+#' @rdname get_constraint
 #' @order 11
 #' @export
-`unique_key<-` <- function(table, cols = NULL, value) {
+`get_unique_key<-` <- function(table, cols = NULL, value) {
   constraint(table, {{ cols }}, "cstr_unique_key") <- value
   table
 }

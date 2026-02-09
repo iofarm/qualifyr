@@ -61,7 +61,10 @@ is_qf_dataset <- function(x) {
 #' @rdname check_constraints
 #' @export
 check_constraints.qf_dataset <- function(x) {
-  x |> purrr::map(check_constraints)
+  structure(
+    purrr::map(x, check_constraints),
+    class = "qf_report_check_dataset"
+  )
 }
 
 #' @noRd
@@ -85,7 +88,7 @@ str.qf_dataset <- function(object,
 #' @noRd
 #' @export
 print.qf_dataset <- function(x, ...) {
-  str(x)
+  utils::str(x)
 }
 
 #' Subsetting qualifyr data sets

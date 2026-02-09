@@ -27,16 +27,16 @@ check_constraint_strict.cstr_not_missing <- function(constraint, table) {
   result
 }
 
-#' @rdname pick_constraint
+#' @rdname get_constraint
 #' @order 4
 #' @export
-not_missing <- function(table, cols = NULL) {
+get_not_missing <- function(table, cols = NULL) {
   constraint(table, {{ cols }}, "cstr_not_missing")
 }
-#' @rdname pick_constraint
+#' @rdname get_constraint
 #' @order 14
 #' @export
-`not_missing<-` <- function(table, cols = NULL, value) {
+`get_not_missing<-` <- function(table, cols = NULL, value) {
   constraint(table, {{ cols }}, "cstr_not_missing") <- value
   table
 }

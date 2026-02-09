@@ -46,6 +46,69 @@ as_qf_constraint.qf_constraint_specifier <- function(x, table, ...) {
 
 
 
+# Constraint lists =============================================================
+
+new_qf_constraint_list <- function(x) {
+  stopifnot(is.list(x))
+  stopifnot(purrr::every(x, is_qf_constraint))
+  structure(x, class = c("qf_constraint_list", "list"))
+}
+
+is_qf_constraint_list <- function(x) {
+  inherits(x, "qf_constraint_list")
+}
+
+as_qf_constraint_list <- function(x) {
+  UseMethod("as_qf_constraint_list")
+}
+
+#' @noRd
+#' @export
+as_qf_constraint_list.qf_constraint_list <- function(x) {
+  x
+}
+#' @noRd
+#' @export
+as_qf_constraint_list.list <- function(x) {
+  purrr::walk(x, \(cstr) {
+    if (!is_qf_constraint(cstr))
+      stop("<qf_constraint_list> cannot include a ", typeof(x))
+  })
+  new_qf_constraint_list(x)
+}
+#' @noRd
+#' @export
+as_qf_constraint_list.qf_constraint <- function(x) {
+  new_qf_constraint_list(list(x))
+}
+
+#' @noRd
+#' @export
+`&.qf_constraint_list` <- function(e1, e2) {
+  new_qf_constraint_list(c(
+    as_qf_constraint_list(e1),
+    as_qf_constraint_list(e2))
+  )
+}
+#' @noRd
+#' @export
+`&.qf_constraint` <- `&.qf_constraint_list`
+
+
+
+# Methods ======================================================================
+
+#' @noRd
+#' @export
+print.qf_constraint <- function(x, ...) {
+  column_names <- paste(x$cols, collapse = ", ")
+  cat0(pretty_class(x), " [", column_names, "]")
+  cat("\n")
+  invisible(x)
+}
+
+
+
 # Constraint specification =====================================================
 
 #' Create a constraint specifier
@@ -150,7 +213,7 @@ NULL
 
 
 
-# Generics =====================================================================
+# Constraint checking ==========================================================
 
 #' Check that a constraint is satisfied
 #'
@@ -166,7 +229,7 @@ check_constraint <- function(constraint, table) {
     purrr::map(excepted_rows, table = table) |>
     purrr::reduce(`|`, .init = rep(FALSE, nrow(table)))
   handled_rows <- satisfied_rows | excepted_rows
-  list(
+  structure(list(
     satisfied = all(satisfied_rows),
     handled = all(handled_rows),
     rows = list(
@@ -174,7 +237,7 @@ check_constraint <- function(constraint, table) {
       excepted = excepted_rows,
       handled = handled_rows
     )
-  )
+  ), class = "qf_report_check", constraint = constraint)
 }
 
 #' Check that a constraint is satisfied, ignoring exceptions
@@ -188,6 +251,65 @@ check_constraint <- function(constraint, table) {
 #' @noRd
 check_constraint_strict <- function(constraint, table) {
   UseMethod("check_constraint_strict")
+}
+
+#' @noRd
+#' @export
+print.qf_report_check <- function(x, max_width = getOption("width"), ...) {
+  print(attr(x, "constraint"))
+  if (x$satisfied) {
+    cat("   All rows satisfied")
+  } else if (x$handled) {
+    cat("   All rows satisfied or excepted")
+  } else {
+    message <- "   Violating rows: "
+    indices <- format_indices(
+      which(!x$rows$handled),
+      max_width - nchar(message)
+    )
+    cat0(message, indices)
+  }
+  cat("\n")
+  invisible(x)
+}
+
+#' @noRd
+#' @export
+print.qf_report_check_table <- function(x, ...) {
+  report_check_header(x)
+  for (cstr in x) print(cstr)
+  invisible(x)
+}
+
+#' @noRd
+#' @export
+print.qf_report_check_dataset <- function(x, ...) {
+  report_check_header(unlist(x, recursive = FALSE))
+  indent <- "   "
+  for (i in 1:length(x)) {
+    if (any(vapply(x[[i]], \(el) !el$handled, logical(1)))) {
+      cat0("=> In table '", names(x)[[i]], "':\n")
+      for (j in 1:length(x[[i]])) {
+        if (!x[[i]][[j]]$handled) {
+          report_check_constraint <- utils::capture.output({
+            cat0("[[", j, "]] ")
+            print(x[[i]][[j]], max_width = getOption("width") - nchar(indent))
+          })
+          cat(paste0(indent, report_check_constraint), sep = "\n")
+        }
+      }
+    }
+  }
+}
+
+report_check_header <- function(x) {
+  satisfied <- purrr::map_lgl(x, "satisfied")
+  handled <- purrr::map_lgl(x, "handled")
+  n_satisfied <- sum(satisfied)
+  n_excepted <- sum(handled) - sum(satisfied)
+  n_violated <- length(x) - sum(handled)
+  cat("Constraint check report:", n_satisfied, "satisfied", "/", n_excepted,
+    "excepted", "/", n_violated, "violated:", "\n")
 }
 
 
@@ -216,15 +338,6 @@ exceptions <- function(x) {
 `exceptions<-` <- function(x, value) {
   if (!is_qf_constraint(x))
     stop("'x' must be a <qf_constraint>, not ", typeof(x))
-  exception_list <-
-  if (is_qf_exception(value))
-    list(value)
-  else if (is.list(value))
-    purrr::walk(value, \(expt) if (!is_qf_exception(expt)) stop("'value' must
-      contain only <qf_exception> objects, not ", typeof(expt)))
-  else stop("'value' must be a <qf_exception> or list of <qf_exception> objects,
-    not ", typeof(value))
-
-  attr(x, "exceptions") <- exception_list
+  attr(x, "exceptions") <- as_qf_exception_list(value)
   x
 }

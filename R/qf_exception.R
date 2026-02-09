@@ -14,6 +14,56 @@ is_qf_exception <- function(x) {
 
 
 
+# Exception lists ==============================================================
+
+new_qf_exception_list <- function(x) {
+  stopifnot(is.list(x))
+  stopifnot(purrr::every(x, is_qf_exception))
+  structure(x, class = c("qf_exception_list", "list"))
+}
+
+is_qf_exception_list <- function(x) {
+  inherits(x, "qf_exception_list")
+}
+
+as_qf_exception_list <- function(x) {
+  UseMethod("as_qf_exception_list")
+}
+
+#' @noRd
+#' @export
+as_qf_exception_list.qf_exception_list <- function(x) {
+  x
+}
+#' @noRd
+#' @export
+as_qf_exception_list.list <- function(x) {
+  purrr::walk(x, \(cstr) {
+    if (!is_qf_exception(cstr))
+      stop("<qf_exception_list> cannot include a ", typeof(x))
+  })
+  new_qf_exception_list(x)
+}
+#' @noRd
+#' @export
+as_qf_exception_list.qf_exception <- function(x) {
+  new_qf_exception_list(list(x))
+}
+
+#' @noRd
+#' @export
+`|.qf_exception_list` <- function(e1, e2) {
+  new_qf_exception_list(c(
+    as_qf_exception_list(e1),
+    as_qf_exception_list(e2))
+  )
+}
+#' @noRd
+#' @export
+`|.qf_exception` <- `|.qf_exception_list`
+
+
+
 # Exception specification ======================================================
 
 #' Define a constraint exception

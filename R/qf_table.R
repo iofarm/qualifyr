@@ -16,6 +16,8 @@ new_qf_table <- function(x, constraints) {
 validate_qf_table <- function(x) {
   if (!is.null(attr(x, "context")) && !is_qf_dataset(attr(x, "context")))
     stop("Table has invalid 'context' attribute")
+  if (!is_qf_constraint_list(constraints(x)))
+    stop("Table has invalid 'constraints' attribute")
   purrr::walk(constraints(x), \(cstr) tryCatch(
     validate_qf_constraint(cstr, x),
     error = \(e) stop(
@@ -44,7 +46,7 @@ as_qf_table <- function(x) {
     if (!inherits(x, "data.frame")) {
       x <- as.data.frame(x)
     }
-    new_qf_table(x, list())
+    new_qf_table(x, new_qf_constraint_list(list()))
   }
 }
 
@@ -61,7 +63,10 @@ is_qf_table <- function(x) {
 #' @rdname check_constraints
 #' @export
 check_constraints.qf_table <- function(x) {
-  constraints(x) |> purrr::map(check_constraint, x)
+  structure(
+    purrr::map(constraints(x), check_constraint, x),
+    class = "qf_report_check_table"
+  )
 }
 
 #' @noRd
@@ -90,21 +95,10 @@ str.qf_table <- function(object,
 
   # Constraints
   cat(indent.str, "- Constraints:", "\n", sep = "")
-  constraint_types <- constraints(object) |>
-    vapply(pretty_class, character(1)) |>
-    format()
-  constraint_cols <- constraints(object) |>
-    vapply(\(cstr) {
-      col_names <- paste0("[", paste(cstr$cols, collapse = ", "), "]")
-      if (inherits(cstr, "cstr_foreign_key")) {
-        ref_col_names <- paste(cstr$ref_cols, collapse = ", ")
-        paste0(col_names, " => ", cstr$ref_table, "[", ref_col_names, "]")
-      } else {
-        col_names
-      }
-    }, character(1))
-  paste0(indent.str, "..", " - ", constraint_types, " ", constraint_cols) |>
-    cat(sep = "\n")
+  for (cstr in constraints(object)) {
+    cat0(indent.str, "..", " - ")
+    print(cstr)
+  }
 
   # Context
   if (show.context && !is.null(context)) {
@@ -119,7 +113,7 @@ str.qf_table <- function(object,
 #' @noRd
 #' @export
 print.qf_table <- function(x, ...) {
-  str(x)
+  utils::str(x)
 }
 
 
@@ -141,7 +135,7 @@ print.qf_table <- function(x, ...) {
 #'   will signal an error. Tables returned by subsetting a qualifyr dataset
 #'   using `$`, `[[`, or `[` have this attribute set.
 #'
-#' @seealso [pick_constraint]
+#' @seealso [get_constraint]
 #'
 #' @rdname constraints
 #' @export
@@ -153,14 +147,13 @@ constraints <- function(x) {
 `constraints<-` <- function(x, value) {
   if (!is_qf_table(x))
     stop("'x' must be a qualifyr table, not ", typeof(x))
-  if (!rlang::is_list(value))
-    stop("'value' must be a list, not ", typeof(value))
-  attr(x, "constraints") <- purrr::modify(value, as_qf_constraint, table = x)
+  attr(x, "constraints") <- as_qf_constraint_list(value) |>
+    purrr::modify(as_qf_constraint, table = x)
   validate_qf_table(x)
 }
 
-#' @name pick_constraint
-#' @rdname pick_constraint
+#' @name get_constraint
+#' @rdname get_constraint
 #' @order 0
 #'
 #' @title Get or replace a specific constraint
@@ -182,7 +175,7 @@ NULL
 
 #' Get the index of a specific constraint
 #'
-#' @inheritParams pick_constraint
+#' @inheritParams get_constraint
 #' @param class a string naming the class of the constraint to pick
 #'
 #' @returns the index of the constraint
@@ -211,7 +204,7 @@ constraint_index <- function(table, cols = NULL, class) {
 
 #' Get or replace a specific constraint using the class name
 #'
-#' @inheritParams pick_constraint
+#' @inheritParams get_constraint
 #' @param class a string naming the class of the constraint to pick
 #'
 #' @inheritSection pick_constraint returns

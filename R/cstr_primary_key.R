@@ -30,16 +30,16 @@ check_constraint_strict.cstr_primary_key <- function(constraint, table) {
   result
 }
 
-#' @rdname pick_constraint
+#' @rdname get_constraint
 #' @order 2
 #' @export
-primary_key <- function(table, cols = NULL) {
+get_primary_key <- function(table, cols = NULL) {
   constraint(table, {{ cols }}, "cstr_primary_key")
 }
-#' @rdname pick_constraint
+#' @rdname get_constraint
 #' @order 12
 #' @export
-`primary_key<-` <- function(table, cols = NULL, value) {
+`get_primary_key<-` <- function(table, cols = NULL, value) {
   constraint(table, {{ cols }}, "cstr_primary_key") <- value
   table
 }

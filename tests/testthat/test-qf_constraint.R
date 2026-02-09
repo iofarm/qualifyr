@@ -1,26 +1,24 @@
 test_that("setting constraints works", {
   dset <- example_dataset(constrained = FALSE)
 
-  constraints(dset$planes) <- list(
+  constraints(dset$planes) <-
     cstr_primary_key(tailnum)
-  )
   expect_identical(
     constraints(dset$planes),
-    list(
+    new_qf_constraint_list(list(
       structure(
         list(cols = "tailnum"),
         class = c("cstr_primary_key", "cstr_unique_key", "qf_constraint")
       )
-    )
+    ))
   )
 
-  constraints(dset$flights) <- list(
-    cstr_primary_key(c(flight, year, month, day)),
+  constraints(dset$flights) <-
+    cstr_primary_key(c(flight, year, month, day)) &
     cstr_foreign_key(tailnum, reference = planes)
-  )
   expect_identical(
     constraints(dset$flights),
-    list(
+    new_qf_constraint_list(list(
       structure(
         list(cols = c("flight", "year", "month", "day")),
         class = c("cstr_primary_key", "cstr_unique_key", "qf_constraint")
@@ -29,7 +27,7 @@ test_that("setting constraints works", {
         list(cols = "tailnum", ref_table = "planes", ref_cols = "tailnum"),
         class = c("cstr_foreign_key", "qf_constraint")
       )
-    )
+    ))
   )
 
   # Foreign key referencing own table:
@@ -38,14 +36,13 @@ test_that("setting constraints works", {
     disintegration = c(4, 8, 9, 2, 7, 3, 1, 5, 6),
     integration    = c(7, 4, 6, 1, 8, 9, 5, 2, 3)
   ))
-  constraints(enneagram) <- list(
-    cstr_primary_key(number),
-    cstr_foreign_key(disintegration, .self$number),
+  constraints(enneagram) <-
+    cstr_primary_key(number) &
+    cstr_foreign_key(disintegration, .self$number) &
     cstr_foreign_key(integration, .self$number)
-  )
   expect_identical(
     constraints(enneagram),
-    list(
+    new_qf_constraint_list(list(
       structure(
         list(cols = "number"),
         class = c("cstr_primary_key", "cstr_unique_key", "qf_constraint")
@@ -58,7 +55,7 @@ test_that("setting constraints works", {
         list(cols = "integration", ref_table = ".self", ref_cols = "number"),
         class = c("cstr_foreign_key", "qf_constraint")
       )
-    )
+    ))
   )
   expect_error(regex = "no information on other tables in the dataset",  {
     constraints(enneagram) <- list(
@@ -102,6 +99,8 @@ test_that("constraint checking works", {
   expect_false(result$flights[[1]]$satisfied)
   expect_true(result$flights[[2]]$satisfied)
 
+  expect_snapshot_output(print(result))
+
   # Case 2: Primary key and not-missing constraint on 'airlines' is invalid
   #   because of missing values for Delta Airlines; Foreign key on 'flights' is
   #   invalid because it references this primary key.
@@ -137,7 +136,7 @@ test_that("constraint validators work", {
     cstr_not_missing(name)
   )
   expect_error(regexp = "includes non-existent columns", {
-    not_missing(dset$airlines)$cols <- "nombre"
+    get_not_missing(dset$airlines)$cols <- "nombre"
   })
   expect_error(regexp = "does not reference a unique key", {
     constraints(dset$flights) <- list(

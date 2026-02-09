@@ -77,16 +77,26 @@ check_constraint_strict.cstr_foreign_key <- function(constraint, table) {
   result
 }
 
-#' @rdname pick_constraint
+#' @rdname get_constraint
 #' @order 3
 #' @export
-foreign_key <- function(table, cols = NULL) {
+get_foreign_key <- function(table, cols = NULL) {
   constraint(table, {{ cols }}, "cstr_foreign_key")
 }
-#' @rdname pick_constraint
+#' @rdname get_constraint
 #' @order 13
 #' @export
-`foreign_key<-` <- function(table, cols = NULL, value) {
+`get_foreign_key<-` <- function(table, cols = NULL, value) {
   constraint(table, {{ cols }}, "cstr_foreign_key") <- value
   table
+}
+
+#' @noRd
+#' @export
+print.cstr_foreign_key <- function(x, ...) {
+  base <- utils::capture.output(NextMethod())
+  ref_col_names <- paste(x$ref_cols, collapse = ", ")
+  cat0(base, " => ", x$ref_table, "[", ref_col_names, "]")
+  cat("\n")
+  invisible(x)
 }
