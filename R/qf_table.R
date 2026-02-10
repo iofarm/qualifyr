@@ -145,8 +145,7 @@ constraints <- function(x) {
 #' @rdname constraints
 #' @export
 `constraints<-` <- function(x, value) {
-  if (!is_qf_table(x))
-    stop("'x' must be a qualifyr table, not ", typeof(x))
+  check_arg_type(x, "qf_table")
   attr(x, "constraints") <- as_qf_constraint_list(value) |>
     purrr::modify(as_qf_constraint, table = x)
   validate_qf_table(x)

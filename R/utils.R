@@ -115,6 +115,12 @@ format_indices <- function(x, max_len = Inf) {
 
 # Miscellaneous ================================================================
 
+check_arg_type <- function(arg, type, predicate = \(x) inherits(x, type)) {
+  arg_name <- rlang::ensym(arg)
+  if (!(predicate)(arg))
+    stop(sprintf("'%s' must be a %s, not %s", arg_name, type, typeof(arg)))
+}
+
 first <- function(x) {
   x[[1]]
 }

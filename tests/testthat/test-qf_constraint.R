@@ -145,3 +145,17 @@ test_that("constraint validators work", {
     )
   })
 })
+
+test_that("apply_to_each() works", {
+  dset <- example_dataset(constrained = FALSE)
+  constraints(dset$planes) <-
+    cstr_primary_key(tailnum) &
+    apply_to_each(cstr_not_missing, year, type, manufacturer, model)
+  expect_true(
+    purrr::every(constraints(dset$planes)[-1], inherits, "cstr_not_missing")
+  )
+  expect_equal(
+    purrr::map_chr(constraints(dset$planes)[-1], "cols") |> unname(),
+    c("year", "type", "manufacturer", "model")
+  )
+})

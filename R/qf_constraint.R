@@ -211,6 +211,32 @@ utils::globalVariables(c(".table"))
 #' @name cstr_
 NULL
 
+#' Apply the same constraint to multiple columns or sets of columns
+#'
+#' `apply_to_each()` applies a constraint specifier function
+#' ([`cstr_*()`][cstr_]) to each of several columns or sets of columns specified
+#' in `...`
+#'
+#' @param .cstr A constraint specifier function (one of [`cstr_*()`][cstr_])
+#' @param ... <[`tidy-select`][args_tidy_select]> Each is passed to the `cols`
+#'   argument of `.cstr`
+#' @param .args List of additional arguments passed to `.cstr`
+#'
+#' @returns A `<qf_constraint_list>`
+#'
+#' @export
+apply_to_each <- function(.cstr, ..., .args = list()) {
+  check_arg_type(.cstr, "function")
+  check_arg_type(.args, "list")
+  col_specs <- rlang::enquos(...)
+  constraint_specs <- purrr::map(col_specs, \(spec)
+    rlang::eval_tidy(rlang::expr(
+      (.cstr)(!!spec, !!!.args)
+    ))
+  )
+  as_qf_constraint_list(constraint_specs)
+}
+
 
 
 # Constraint checking ==========================================================
@@ -327,17 +353,14 @@ report_check_header <- function(x) {
 #'
 #' @export
 exceptions <- function(x) {
-  if (!is_qf_constraint(x))
-    stop("'x' must be a <qf_constraint>, not ", typeof(x))
-
+  check_arg_type(x, "qf_constraint")
   attr(x, "exceptions")
 }
 
 #' @rdname exceptions
 #' @export
 `exceptions<-` <- function(x, value) {
-  if (!is_qf_constraint(x))
-    stop("'x' must be a <qf_constraint>, not ", typeof(x))
+  check_arg_type(x, "qf_constraint")
   attr(x, "exceptions") <- as_qf_exception_list(value)
   x
 }
