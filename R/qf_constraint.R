@@ -246,24 +246,23 @@ apply_to_each <- function(.cstr, ..., .args = list()) {
 #' @param constraint A `<qf_constraint>` object
 #' @param table The table to which the constraint is applied
 #'
-#' @returns A list; see `check_constraints` for details.
+#' @returns A `<qf_check_constraint/qf_check>` object
 #'
 #' @noRd
 check_constraint <- function(constraint, table) {
-  satisfied_rows <- check_constraint_strict(constraint, table)
-  excepted_rows <- attr(constraint, "exceptions") |>
+  results <- data.frame(row.names = seq_len(nrow(table)))
+  results$satisfied <- check_constraint_strict(constraint, table)
+  results$excepted <- attr(constraint, "exceptions") |>
     purrr::map(excepted_rows, table = table) |>
     purrr::reduce(`|`, .init = rep(FALSE, nrow(table)))
-  handled_rows <- satisfied_rows | excepted_rows
-  structure(list(
-    satisfied = all(satisfied_rows),
-    handled = all(handled_rows),
-    rows = list(
-      satisfied = satisfied_rows,
-      excepted = excepted_rows,
-      handled = handled_rows
-    )
-  ), class = "qf_report_check", constraint = constraint)
+  results$handled <- results$satisfied | results$excepted
+  new_qf_check(
+    results,
+    satisfied = all(results$satisfied),
+    handled = all(results$handled),
+    constraint = constraint,
+    subclass = "qf_check_constraint"
+  )
 }
 
 #' Check that a constraint is satisfied, ignoring exceptions
@@ -278,69 +277,6 @@ check_constraint <- function(constraint, table) {
 check_constraint_strict <- function(constraint, table) {
   UseMethod("check_constraint_strict")
 }
-
-#' @noRd
-#' @export
-print.qf_report_check <- function(x, max_width = getOption("width"), ...) {
-  print(attr(x, "constraint"))
-  if (x$satisfied) {
-    cat("   All rows satisfied")
-  } else if (x$handled) {
-    cat("   All rows satisfied or excepted")
-  } else {
-    message <- "   Violating rows: "
-    indices <- format_indices(
-      which(!x$rows$handled),
-      max_width - nchar(message)
-    )
-    cat0(message, indices)
-  }
-  cat("\n")
-  invisible(x)
-}
-
-#' @noRd
-#' @export
-print.qf_report_check_table <- function(x, ...) {
-  report_check_header(x)
-  for (cstr in x) print(cstr)
-  invisible(x)
-}
-
-#' @noRd
-#' @export
-print.qf_report_check_dataset <- function(x, ...) {
-  report_check_header(unlist(x, recursive = FALSE))
-  indent <- "   "
-  for (i in 1:length(x)) {
-    if (any(vapply(x[[i]], \(el) !el$handled, logical(1)))) {
-      cat0("=> In table '", names(x)[[i]], "':\n")
-      for (j in 1:length(x[[i]])) {
-        if (!x[[i]][[j]]$handled) {
-          report_check_constraint <- utils::capture.output({
-            cat0("[[", j, "]] ")
-            print(x[[i]][[j]], max_width = getOption("width") - nchar(indent))
-          })
-          cat(paste0(indent, report_check_constraint), sep = "\n")
-        }
-      }
-    }
-  }
-}
-
-report_check_header <- function(x) {
-  satisfied <- purrr::map_lgl(x, "satisfied")
-  handled <- purrr::map_lgl(x, "handled")
-  n_satisfied <- sum(satisfied)
-  n_excepted <- sum(handled) - sum(satisfied)
-  n_violated <- length(x) - sum(handled)
-  cat("Constraint check report:", n_satisfied, "satisfied", "/", n_excepted,
-    "excepted", "/", n_violated, "violated:", "\n")
-}
-
-
-
-# Exception handling ===========================================================
 
 #' Get or set the exceptions of a constraint
 #'

@@ -61,9 +61,12 @@ is_qf_dataset <- function(x) {
 #' @rdname check_constraints
 #' @export
 check_constraints.qf_dataset <- function(x) {
-  structure(
-    purrr::map(x, check_constraints),
-    class = "qf_report_check_dataset"
+  table_checks <- purrr::map(x, check_constraints)
+  new_qf_check(
+    table_checks,
+    subclass = "qf_check_dataset",
+    satisfied = purrr::every(table_checks, satisfied),
+    handled = purrr::every(table_checks, handled)
   )
 }
 

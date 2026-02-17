@@ -94,10 +94,10 @@ test_that("constraint checking works", {
   # Case 1: Primary key on 'flights' is invalid because of duplicate keys;
   #   otherwise OK
   result <- check_constraints(dset)
-  expect_true(result$airlines[[1]]$satisfied)
-  expect_true(result$airlines[[2]]$satisfied)
-  expect_false(result$flights[[1]]$satisfied)
-  expect_true(result$flights[[2]]$satisfied)
+  expect_true(satisfied(result$airlines[[1]]))
+  expect_true(satisfied(result$airlines[[2]]))
+  expect_false(satisfied(result$flights[[1]]))
+  expect_true(satisfied(result$flights[[2]]))
 
   expect_snapshot_output(print(result))
 
@@ -107,10 +107,10 @@ test_that("constraint checking works", {
   dset2 <- dset
   dset2$airlines[dset$airlines$carrier == "DL", ] <- NA
   result2 <- check_constraints(dset2)
-  expect_false(result2$airlines[[1]]$satisfied)
-  expect_false(result2$airlines[[2]]$satisfied)
-  expect_false(result2$flights[[1]]$satisfied)
-  expect_false(result2$flights[[2]]$satisfied)
+  expect_false(satisfied(result2$airlines[[1]]))
+  expect_false(satisfied(result2$airlines[[2]]))
+  expect_false(satisfied(result2$flights[[1]]))
+  expect_false(satisfied(result2$flights[[2]]))
 
   # Foreign key referencing own table:
   enneagram <- as_qf_table(data.frame(
@@ -124,8 +124,8 @@ test_that("constraint checking works", {
     cstr_foreign_key(integration, .self$number)
   )
   result9 <- check_constraints(enneagram)
-  expect_true(result9[[2]]$satisfied)
-  expect_true(result9[[3]]$satisfied)
+  expect_true(satisfied(result9[[2]]))
+  expect_true(satisfied(result9[[3]]))
 
 })
 

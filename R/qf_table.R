@@ -63,9 +63,12 @@ is_qf_table <- function(x) {
 #' @rdname check_constraints
 #' @export
 check_constraints.qf_table <- function(x) {
-  structure(
-    purrr::map(constraints(x), check_constraint, x),
-    class = "qf_report_check_table"
+  constraint_checks <- purrr::map(constraints(x), check_constraint, x)
+  new_qf_check(
+    constraint_checks,
+    subclass = "qf_check_table",
+    satisfied = purrr::every(constraint_checks, satisfied),
+    handled = purrr::every(constraint_checks, satisfied)
   )
 }
 
