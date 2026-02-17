@@ -62,3 +62,11 @@ test_that("print() output is correct", {
   dset <- example_dataset()
   expect_snapshot_output(print(dset$planes))
 })
+
+test_that("argument type checking works", {
+  dset <- example_dataset()
+  expect_error(regexp = "'x' must be a qf_table, not NULL", {
+    constraints(dset$planez) <-
+      cstr_primary_key(tailnum)
+  })
+})

@@ -1,7 +1,7 @@
 Package: qualifyr
 Type: Package
 Title: Validate Relational Data Structures
-Version: 0.1.0.9000
+Version: 0.1.0.9002
 Authors@R: c(
     person(
       "Ian", "Farm",
