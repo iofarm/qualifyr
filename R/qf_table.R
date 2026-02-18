@@ -68,7 +68,7 @@ check_constraints.qf_table <- function(x) {
     constraint_checks,
     subclass = "qf_check_table",
     satisfied = purrr::every(constraint_checks, satisfied),
-    handled = purrr::every(constraint_checks, satisfied)
+    handled = purrr::every(constraint_checks, handled)
   )
 }
 
