@@ -150,7 +150,13 @@ constraints <- function(x) {
 `constraints<-` <- function(x, value) {
   check_arg_type(x, "qf_table")
   attr(x, "constraints") <- as_qf_constraint_list(value) |>
-    purrr::modify(as_qf_constraint, table = x)
+    purrr::map(\(cstr_spec) {
+      cstr <- cstr_spec |>
+        resolve_constraint_specifier(table = x) |>
+        as_qf_constraint_list()
+    }) |>
+    do.call(what = c) |> new_qf_constraint_list()
+
   validate_qf_table(x)
 }
 

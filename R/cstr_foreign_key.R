@@ -13,7 +13,7 @@ cstr_foreign_key <- function(cols, reference) {
     if (is.null(ref_exprs$cols)) cols_quo
   else rlang::new_quosure(ref_exprs$cols, ref_env)
 
-  new_constraint_specifier({
+  new_qf_constraint_specifier({
     cols_chr <- select_names(cols_quo, .table)
     ref_table_chr <- NULL
     ref_table_obj <- NULL

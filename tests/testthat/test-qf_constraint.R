@@ -159,3 +159,17 @@ test_that("apply_to_each() works", {
     c("year", "type", "manufacturer", "model")
   )
 })
+
+test_that("apply_to_each_col() works", {
+  dset1 <- example_dataset(constrained = FALSE)
+  constraints(dset1$planes) <-
+    cstr_primary_key(tailnum) &
+    cstr_not_missing |> apply_to_each(year, type, manufacturer, model)
+
+  dset2 <- example_dataset(constrained = FALSE)
+  constraints(dset2$planes) <-
+    cstr_primary_key(tailnum) &
+    cstr_not_missing |> apply_to_each_col(year:model)
+
+  expect_identical(constraints(dset1$planes), constraints(dset2$planes))
+})

@@ -41,7 +41,11 @@ as_qf_constraint.qf_constraint <- function(x, ...) {
 #' @noRd
 #' @export
 as_qf_constraint.qf_constraint_specifier <- function(x, table, ...) {
-  (x)(table)
+  y <- (x)(table)
+  if (is_qf_constraint_list(y))
+    stop("'x' specifies multiple constraints and cannot be coerced to a a",
+      "single constraint")
+  y
 }
 
 
@@ -128,7 +132,7 @@ print.qf_constraint <- function(x, ...) {
 #'   argument (`.table`) and returns a `<qf_constraint>` object.
 #'
 #' @noRd
-new_constraint_specifier <- function(code) {
+new_qf_constraint_specifier <- function(code) {
   structure(
     rlang::new_function(
       alist(.table = ),
@@ -179,6 +183,22 @@ parse_reference_specifier <- function(expr) {
   )
 }
 
+resolve_constraint_specifier <- function(x, table) {
+  check_arg_type(x, "qf_constraint")
+  check_arg_type(table, "qf_table")
+
+  if (inherits(x, "qf_constraint_specifier"))
+    (x)(table)
+  else
+    x
+}
+
+#' @noRd
+#' @export
+print.qf_constraint_specifier <- function(x, ...) {
+  cat("<qf_constraint_specifier>\n")
+}
+
 # declare data pronouns to avoid R CMD CHECK notes
 utils::globalVariables(c(".table"))
 
@@ -214,15 +234,20 @@ NULL
 #' Apply the same constraint to multiple columns or sets of columns
 #'
 #' `apply_to_each()` applies a constraint specifier function
-#' ([`cstr_*()`][cstr_]) to each of several columns or sets of columns specified
-#' in `...`
+#' ([`cstr_*()`][cstr_]) to each set of columns specified in `...`.
+#' `apply_to_each_col()` is similar, but applies the constraint specifier
+#' function to each column specified in `.cols`.
 #'
 #' @param .cstr A constraint specifier function (one of [`cstr_*()`][cstr_])
-#' @param ... <[`tidy-select`][args_tidy_select]> Each is passed to the `cols`
-#'   argument of `.cstr`
+#' @param ... <[`tidy-select`][args_tidy_select]> Each element is passed to the
+#'   `cols` argument of `.cstr`
+#' @param .cols <[`tidy-select`][args_tidy_select]> Each column is passed to the
+#'   `cols` argument of `.cstr`
 #' @param .args List of additional arguments passed to `.cstr`
 #'
-#' @returns A `<qf_constraint_list>`
+#' @returns `apply_to_each()` returns a `<qf_constraint_list>` containing
+#'   `<qf_constraint_specifier>`s. `apply_to_each_col()` returns a single
+#'   `<qf_constraint_specifier>` which in turn returns a `<qf_constraint_list>`.
 #'
 #' @export
 apply_to_each <- function(.cstr, ..., .args = list()) {
@@ -237,6 +262,22 @@ apply_to_each <- function(.cstr, ..., .args = list()) {
   as_qf_constraint_list(constraint_specs)
 }
 
+#' @rdname apply_to_each
+#' @export
+apply_to_each_col <- function(.cstr, .cols, .args = list()) {
+  check_arg_type(.cstr, "function")
+  check_arg_type(.args, "list")
+  col_specs <- rlang::enquo(.cols)
+
+  new_qf_constraint_specifier({
+    cols <- select_names(col_specs, .table)
+    constraint_objs <- purrr::map(cols, \(col) {
+      f <- do.call(.cstr, c(list(col), .args))
+      (f)(.table)
+    })
+    new_qf_constraint_list(constraint_objs)
+  })
+}
 
 
 # Constraint checking ==========================================================

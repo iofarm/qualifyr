@@ -4,7 +4,7 @@
 #' @export
 cstr_primary_key <- function(cols) {
   cols_quo <- rlang::enquo(cols)
-  new_constraint_specifier({
+  new_qf_constraint_specifier({
     new_qf_constraint(
       list(cols = select_names(cols_quo, .table)),
       c("cstr_primary_key", "cstr_unique_key")

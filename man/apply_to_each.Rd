@@ -2,23 +2,32 @@
 % Please edit documentation in R/qf_constraint.R
 \name{apply_to_each}
 \alias{apply_to_each}
+\alias{apply_to_each_col}
 \title{Apply the same constraint to multiple columns or sets of columns}
 \usage{
 apply_to_each(.cstr, ..., .args = list())
+
+apply_to_each_col(.cstr, .cols, .args = list())
 }
 \arguments{
 \item{.cstr}{A constraint specifier function (one of \code{\link[=cstr_]{cstr_*()}})}
 
-\item{...}{<\code{\link[=args_tidy_select]{tidy-select}}> Each is passed to the \code{cols}
-argument of \code{.cstr}}
+\item{...}{<\code{\link[=args_tidy_select]{tidy-select}}> Each element is passed to the
+\code{cols} argument of \code{.cstr}}
 
 \item{.args}{List of additional arguments passed to \code{.cstr}}
+
+\item{.cols}{<\code{\link[=args_tidy_select]{tidy-select}}> Each column is passed to the
+\code{cols} argument of \code{.cstr}}
 }
 \value{
-A \verb{<qf_constraint_list>}
+\code{apply_to_each()} returns a \verb{<qf_constraint_list>} containing
+\verb{<qf_constraint_specifier>}s. \code{apply_to_each_col()} returns a single
+\verb{<qf_constraint_specifier>} which in turn returns a \verb{<qf_constraint_list>}.
 }
 \description{
 \code{apply_to_each()} applies a constraint specifier function
-(\code{\link[=cstr_]{cstr_*()}}) to each of several columns or sets of columns specified
-in \code{...}
+(\code{\link[=cstr_]{cstr_*()}}) to each set of columns specified in \code{...}.
+\code{apply_to_each_col()} is similar, but applies the constraint specifier
+function to each column specified in \code{.cols}.
 }

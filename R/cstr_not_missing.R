@@ -4,7 +4,7 @@
 #' @export
 cstr_not_missing <- function(cols) {
   cols_quo <- rlang::enquo(cols)
-  new_constraint_specifier({
+  new_qf_constraint_specifier({
     new_qf_constraint(
       list(cols = select_names(cols_quo, .table)),
       "cstr_not_missing"
