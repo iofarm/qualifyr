@@ -14,12 +14,6 @@ cstr_unique_key <- function(cols) {
 
 #' @noRd
 #' @export
-validate_qf_constraint.cstr_unique_key <- function(x, table) {
-  NextMethod()
-}
-
-#' @noRd
-#' @export
 check_constraint_strict.cstr_unique_key <- function(constraint, table) {
   key_cols <- table[constraint$cols]
 

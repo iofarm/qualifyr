@@ -13,19 +13,23 @@ new_qf_table <- function(x, constraints) {
   )
 }
 
-validate_qf_table <- function(x) {
+validate_qf_table <- function(x, call = rlang::caller_env()) {
   if (!is.null(attr(x, "context")) && !is_qf_dataset(attr(x, "context")))
-    stop("Table has invalid 'context' attribute")
+    abort("Table has invalid 'context' attribute", call = call)
   if (!is_qf_constraint_list(constraints(x)))
-    stop("Table has invalid 'constraints' attribute")
-  purrr::walk(constraints(x), \(cstr) tryCatch(
-    validate_qf_constraint(cstr, x),
-    error = \(e) stop(
-      pretty_class(cstr), " (", paste(cstr$cols, sep = ", "), ") ",
-      "has invalid structure: \n",
-      e$message
+    abort("Table has invalid 'constraints' attribute", call = call)
+  rlang::try_fetch(
+    purrr::walk(constraints(x),
+      \(cstr) validate_qf_constraint(cstr, x, call = NULL)
+    ),
+    error = \(e) abort(
+      sprintf("%s [%s] has invalid structure", pretty_class(e$parent$cstr),
+        paste(e$parent$cstr$cols, sep = ", ")),
+      parent = e$parent,
+      call = call
     )
-  ))
+  )
+
   x
 }
 

@@ -48,16 +48,19 @@ cstr_foreign_key <- function(cols, reference) {
 
 #' @noRd
 #' @export
-validate_qf_constraint.cstr_foreign_key <- function(x, table) {
+validate_qf_constraint.cstr_foreign_key <- function(x, table, call) {
   ref_table_obj <- resolve_table_reference(table, x$ref_table)
   if (is.null(ref_table_obj))
-    stop(pretty_class(x), " references a non-existent table (",
-      x$ref_table, ")")
+    abort(
+      sprintf("foreign key references a non-existent table (%s)", x$ref_table),
+      call = call, cstr = x
+    )
   references_unique_key <- purrr::some(constraints(ref_table_obj), \(cstr)
     inherits(cstr, "cstr_unique_key") && setequal(x$ref_cols, cstr$cols)
   )
   if (!references_unique_key)
-    stop(pretty_class(x), " does not reference a unique key")
+    abort("foreign key does not reference a unique key", call = call, cstr = x)
+
   NextMethod()
 }
 

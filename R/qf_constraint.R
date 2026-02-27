@@ -7,18 +7,22 @@ new_qf_constraint <- function(x, subclass) {
   structure(x, class = c(subclass, "qf_constraint"))
 }
 
-validate_qf_constraint <- function(x, table) {
+validate_qf_constraint <- function(x, table, call = rlang::caller_env()) {
   UseMethod("validate_qf_constraint")
 }
 
 #' @noRd
 #' @export
-validate_qf_constraint.qf_constraint <- function(x, table) {
+validate_qf_constraint.qf_constraint <- function(x, table, call) {
   if (!setequal(x$cols, unique(x$cols)))
-    stop(pretty_class(x), " includes duplicate columns")
+    abort("constraint includes duplicate columns", call = call, cstr = x)
   if (!all(x$cols %in% colnames(table)))
-    stop(pretty_class(x), " includes non-existent columns: ",
-      paste(setdiff(x$cols, colnames(table)), collapse = ", "))
+    abort(
+      sprintf("constraint includes non-existent columns: %s",
+        paste(setdiff(x$cols, colnames(table)), collapse = ", ")),
+      call = call, cstr = x
+    )
+
   x
 }
 

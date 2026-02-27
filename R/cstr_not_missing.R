@@ -14,12 +14,6 @@ cstr_not_missing <- function(cols) {
 
 #' @noRd
 #' @export
-validate_qf_constraint.cstr_not_missing <- function(x, table) {
-  NextMethod()
-}
-
-#' @noRd
-#' @export
 check_constraint_strict.cstr_not_missing <- function(constraint, table) {
   key_cols <- table[constraint$cols]
   result <- !apply(key_cols, 1, anyNA)

@@ -10,18 +10,20 @@ new_qf_dataset <- function(x) {
   structure(x, class = c("qf_dataset", "list"))
 }
 
-validate_qf_dataset <- function(x) {
+validate_qf_dataset <- function(x, call = rlang::caller_env()) {
   purrr::walk(x, \(table)
     if (!is_qf_table(table))
-      stop("A <qf_dataset> must only contain <qf_table> objects")
+      abort("A <qf_dataset> must only contain <qf_table> objects", call = call)
   )
-  purrr::iwalk(x, \(table, name) tryCatch(
-    validate_qf_table(table),
-    error = \(e) stop(
-      "Table ", name, " has invalid structure: \n",
-      e$message
+  rlang::try_fetch(
+    purrr::iwalk(x, \(table, name) validate_qf_table(table, call = NULL)),
+    error = \(e) abort(
+      sprintf("Table %s has invalid structure", e$name),
+      parent = e$parent,
+      call = call
     )
-  ))
+  )
+
   x
 }
 
