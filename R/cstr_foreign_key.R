@@ -94,6 +94,14 @@ get_foreign_key <- function(table, cols = NULL) {
   table
 }
 
+#' @export
+update_col_refs.cstr_foreign_key <- function(x, ref_table, name_changes) {
+  if (ref_table == x$ref_table) {
+    x$ref_cols <- sub_col_names(x$ref_cols, name_changes)
+  }
+  x
+}
+
 #' @noRd
 #' @export
 print.cstr_foreign_key <- function(x, ...) {

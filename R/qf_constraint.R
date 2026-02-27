@@ -345,3 +345,26 @@ exceptions <- function(x) {
   attr(x, "exceptions") <- as_qf_exception_list(value)
   x
 }
+
+
+
+# Helper functions =============================================================
+
+update_col_refs <- function(x, ref_table, name_changes) {
+  UseMethod("update_col_refs")
+}
+
+#' @export
+update_col_refs.qf_constraint <- function(x, ref_table, name_changes) {
+  x
+}
+
+sub_col_names <- function(nms, name_changes) {
+  for (name_change in name_changes) {
+    updated_names <- match(nms, name_change$old)
+    nms <- ifelse(is.na(updated_names),
+      yes = nms,
+      no  = name_change$new[updated_names]
+    )
+  }
+}

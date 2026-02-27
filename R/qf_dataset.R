@@ -148,8 +148,19 @@ NULL
 #' @export
 `$<-.qf_dataset` <- function(x, name, value) {
   value <- as_qf_table(value)
+  name_changes <- attr(value, "name_changes")
   attr(value, "context") <- NULL
-  validate_qf_dataset(NextMethod())
+  attr(value, "name_changes") <- NULL
+
+  y <- NextMethod()
+  if (!is.null(name_changes)) {
+    y <- purrr::modify(y, \(table)
+      constraints(table) <- purrr::modify(constraints(table), \(cstr)
+        update_col_refs(cstr, name, name_changes)
+      )
+    )
+  }
+  validate_qf_dataset(y)
 }
 #' @rdname subsetting
 #' @export
@@ -172,3 +183,7 @@ NULL
   }
   validate_qf_dataset(NextMethod())
 }
+
+
+
+# Helper functions =============================================================

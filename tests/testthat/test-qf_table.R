@@ -70,3 +70,11 @@ test_that("argument type checking works", {
       cstr_primary_key(tailnum)
   })
 })
+
+# test_that("renaming columns does not break constraints", {
+#   dset <- example_dataset()
+#   dset$planes <- dplyr::rename(dset$planes, tailnumber = tailnum)
+#   expect_no_error(
+#     validate_qf_constraint(get_foreign_key(dset$flights), dset$flights)
+#   )
+# })

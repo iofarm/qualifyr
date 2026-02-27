@@ -123,6 +123,24 @@ print.qf_table <- function(x, ...) {
   utils::str(x)
 }
 
+#' @exportS3Method dplyr::rename
+rename.qf_table <- function(.data, ...) {
+  old_names <- names(.data)
+  y <- NextMethod()
+  new_names <- names(y)
+
+  which_changed <- which(old_names != new_names)
+  name_changes <- list(
+    old = old_names[which_changed],
+    new = new_names[which_changed]
+  )
+  constraints(y) <- constraints(y) |> purrr::modify(\(cstr)
+    `$<-`(cstr, cols, sub_col_names(cstr$cols, list(name_changes)))
+  )
+  attr(y, "name_changes") <- c(attr(y, "name_changes"), list(name_changes))
+
+  y
+}
 
 
 # Constraint handling ==========================================================
