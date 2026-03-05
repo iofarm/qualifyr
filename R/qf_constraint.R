@@ -255,26 +255,30 @@ NULL
 #'
 #' @export
 apply_to_each <- function(.cstr, ..., .args = list()) {
+  call <- sys.call()
   check_arg_type(.cstr, "function")
   check_arg_type(.args, "list")
   col_specs <- rlang::enquos(...)
-  constraint_specs <- purrr::map(col_specs, \(spec)
-    rlang::eval_tidy(rlang::expr(
-      (.cstr)(!!spec, !!!.args)
+  constraint_specs <- purrr::map(col_specs, \(col_spec) {
+    cstr_spec <- rlang::eval_tidy(rlang::expr(
+      (.cstr)(!!col_spec, !!!.args)
     ))
-  )
+    environment(cstr_spec)$call <- call
+    cstr_spec
+  })
   as_qf_constraint_list(constraint_specs)
 }
 
 #' @rdname apply_to_each
 #' @export
 apply_to_each_col <- function(.cstr, .cols, .args = list()) {
+  call <- sys.call()
   check_arg_type(.cstr, "function")
   check_arg_type(.args, "list")
   col_specs <- rlang::enquo(.cols)
 
   new_qf_constraint_specifier({
-    cols <- select_names(col_specs, .table)
+    cols <- select_names(col_specs, .table, error_call = call)
     constraint_objs <- purrr::map(cols, \(col) {
       f <- do.call(.cstr, c(list(col), .args))
       (f)(.table)

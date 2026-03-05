@@ -181,12 +181,22 @@ test_that("eval_select() errors have informative calls", {
       cstr_primary_key(tailnumber) # wrong column name
   })
 
-  expect_equal(
-    e$call[[1]],
-    quote(`constraints<-`)
-  )
-  expect_equal(
-    e$parent$call[[1]],
-    quote(cstr_primary_key)
-  )
+  expect_equal(e$call[[1]], quote(`constraints<-`))
+  expect_equal(e$parent$call[[1]], quote(cstr_primary_key))
+})
+
+test_that("apply_to_each() and apply_to_each_col() have informative error calls", {
+  dset1 <- example_dataset(constrained = FALSE)
+  e1 <- rlang::catch_cnd({
+    constraints(dset1$planes) <-
+      cstr_not_missing |> apply_to_each(year, type, mfr, model) # `mfr` is wrong
+  })
+  expect_equal(e1$parent$call[[1]], quote(apply_to_each))
+
+  dset2 <- example_dataset(constrained = FALSE)
+  e2 <- rlang::catch_cnd({
+    constraints(dset2$planes) <-
+      cstr_not_missing |> apply_to_each_col(c(year, type, mfr, model)) # `mfr` is wrong
+  })
+  expect_equal(e2$parent$call[[1]], quote(apply_to_each_col))
 })
