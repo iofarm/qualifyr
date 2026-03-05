@@ -173,3 +173,20 @@ test_that("apply_to_each_col() works", {
 
   expect_identical(constraints(dset1$planes), constraints(dset2$planes))
 })
+
+test_that("eval_select() errors have informative calls", {
+  dset <- example_dataset(constrained = FALSE)
+  e <- rlang::catch_cnd({
+    constraints(dset$planes) <-
+      cstr_primary_key(tailnumber) # wrong column name
+  })
+
+  expect_equal(
+    e$call[[1]],
+    quote(`constraints<-`)
+  )
+  expect_equal(
+    e$parent$call[[1]],
+    quote(cstr_primary_key)
+  )
+})

@@ -4,6 +4,7 @@
 #' @order 3
 #' @export
 cstr_foreign_key <- function(cols, reference) {
+  call <- sys.call()
   cols_quo <- rlang::enquo(cols)
   ref_quo  <- rlang::enquo(reference)
   ref_exprs <- parse_reference_specifier(rlang::quo_squash(ref_quo))
@@ -14,7 +15,7 @@ cstr_foreign_key <- function(cols, reference) {
   else rlang::new_quosure(ref_exprs$cols, ref_env)
 
   new_qf_constraint_specifier({
-    cols_chr <- select_names(cols_quo, .table)
+    cols_chr <- select_names(cols_quo, .table, error_call = call)
     ref_table_chr <- NULL
     ref_table_obj <- NULL
     if (rlang::quo_squash(ref_table_quo) == rlang::sym(".self")) {
@@ -24,16 +25,14 @@ cstr_foreign_key <- function(cols, reference) {
       if (is.null(attr(.table, "context")))
         stop("'reference' refers to a separate table, but no information on ",
           "other tables in the dataset was found")
-      ref_table_chr <- select_names(
-        ref_table_quo,
-        attr(.table, "context")
-      )
+      ref_table_chr <-
+        select_names(ref_table_quo, attr(.table, "context"), error_call = call)
       if (length(ref_table_chr) != 1)
         stop("A foreign key must have a single reference table, but ",
           length(ref_table_chr), " were selected")
       ref_table_obj <- attr(.table, "context")[[ref_table_chr]]
     }
-    ref_cols_chr <- select_names(ref_cols_quo, ref_table_obj)
+    ref_cols_chr <- select_names(ref_cols_quo, ref_table_obj, error_call = call)
 
     new_qf_constraint(
       list(

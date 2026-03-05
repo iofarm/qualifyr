@@ -3,10 +3,11 @@
 #' @order 1
 #' @export
 cstr_unique_key <- function(cols) {
+  call <- sys.call()
   cols_quo <- rlang::enquo(cols)
   new_qf_constraint_specifier({
     new_qf_constraint(
-      list(cols = select_names(cols_quo, .table)),
+      list(cols = select_names(cols_quo, .table, error_call = call)),
       "cstr_unique_key"
     )
   })

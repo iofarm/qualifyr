@@ -158,7 +158,7 @@ constraints <- function(x) {
       cstr <- cstr_spec |>
         resolve_constraint_specifier(table = x) |>
         as_qf_constraint_list()
-    }) |>
+    }, .purrr_error_call = rlang::current_env()) |>
     do.call(what = c) |> new_qf_constraint_list()
 
   validate_qf_table(x)
